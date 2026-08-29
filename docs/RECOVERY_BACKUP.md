@@ -389,6 +389,7 @@ All four collaborator accounts were verified as existing GitHub profiles. Invita
 - Verified the guardrails locally: both contract examples passed schema validation, the shared test passed, and Ruff lint/format checks passed.
 - The first GitHub Actions run found that untracked empty workstream test directories cannot be used as required CI paths. Pytest discovery was corrected to the tracked shared `tests/` directory until workstream tests exist.
 - The second run exposed a CI import-path difference. `scripts` was made an explicit Python package, the repository root was added to Pytest's path, and CI now invokes `python -m pytest` consistently.
+- The third run passed code/tests but exposed a shallow-clone assumption in the whitespace command. It was replaced with a current-commit check that does not require `HEAD^`.
 - Branch/ruleset protection remains a separate repository-permission decision.
 
 ## Mandatory backup-update procedure
