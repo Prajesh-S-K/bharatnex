@@ -34,7 +34,7 @@ jobs:
         run: python scripts/validate_contracts.py
 
       - name: Run tests
-        run: pytest
+        run: python -m pytest
 
       - name: Reject whitespace errors
         run: git diff --check HEAD^
@@ -46,4 +46,3 @@ jobs:
             echo "Potential credential-like assignment found in tracked files."
             exit 1
           fi
-
