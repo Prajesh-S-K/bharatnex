@@ -439,6 +439,7 @@ Corrections made during this audit:
 - Pushed corrected Full Stack branch `fullstack/checkpoint-2-ingestion` at commit `b4400fc`.
 - Remote audit found only `main` and the Full Stack branch; no Intelligence, simulator or Hardware/IoT branches had been pushed yet.
 - FS-01 is locally verified and ready for pull-request review; it is not yet merged into `main`.
+- Corrected GitHub Actions to install both runtime and development dependencies; otherwise the clean PR runner would fail when `tests/test_health.py` imports FastAPI.
 
 Intelligence review recovered from Jhasmitha's submission:
 
