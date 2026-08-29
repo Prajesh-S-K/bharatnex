@@ -4,29 +4,32 @@ For full recovery, read [`RECOVERY_BACKUP.md`](RECOVERY_BACKUP.md).
 
 ## Current state
 
-- Repository foundation: complete.
-- Current branch: `main`.
-- Baseline commit: `741f540`.
-- Public GitHub repository: `https://github.com/Prajesh-S-K/bharatnex`.
-- GitHub workstream owners are recorded in `CODEOWNERS`; four collaborator invitations were sent and are pending acceptance.
-- Clean-code standards and pull-request quality checks are configured.
-- Full Stack branch `fullstack/checkpoint-2-ingestion` at `b4400fc` contains FS-01: FastAPI app, `/health`, runtime dependencies and an automated health smoke test. All local quality checks pass and the branch is pushed.
-- Contracts: v1 files created; JSON syntax checked.
+- Active branch: `fullstack/prototype-command-center`.
+- `main` contains Jhasmitha's validated feature extraction from PR #1.
+- Checkpoint 2 is complete: frozen packet validation → FastAPI → SQLite → readback.
+- A deterministic prototype adapter provides separate Risk and Confidence, trend,
+  explanations, actions and neighbour correlation until the Intelligence service replaces it.
+- Normal, Warning, Critical and Sensor Failure Node A/B scenarios are available.
+- Incidents and deterministic Alpha/Bravo dispatch are available.
+- The React/Vite command centre renders local-XY Leaflet geometry, Recharts history,
+  node sensors, explainability and dispatch.
+
+## Verified commands
+
+```bash
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/python scripts/validate_contracts.py
+.venv/bin/python -m pytest
+cd apps/dashboard && npm run build && npm run lint
+```
+
+Browser verification confirmed live WARNING rendering and Alpha dispatch without console
+errors at `http://127.0.0.1:5173` while the services run.
 
 ## Next action
 
-Continue integration Checkpoint 2 with FS-02, the frozen sensor-reading Pydantic model and ingestion boundary:
-
-```text
-Contract-compatible simulator
-        ↓
-POST /api/v1/readings
-        ↓
-FastAPI validation
-        ↓
-SQLite persistence
-        ↓
-GET/read endpoint confirms stored reading
-```
-
-Keep intelligence behind a service boundary so it can be developed independently. Do not wait for Wokwi or physical hardware.
+1. Push this branch and open a pull request into `main`.
+2. Replace `apps/api/decision.py` with Jhasmitha's contract-compatible service when ready.
+3. Point the simulator or ESP32-S3 gateway at `POST /api/v1/readings`.
+4. Add missing-heartbeat and controlled-recovery handling after the live demo path is stable.

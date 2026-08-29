@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** synchronized through FS-01 correction and Jhasmitha feature-extraction review
+**Backup status:** integrated prototype verified on `fullstack/prototype-command-center`; push/PR pending
 
 ## Recovery instruction for a new task
 
@@ -297,11 +297,11 @@ Workstreams may implement independently, but they may not invent independent int
 | # | Checkpoint | Status |
 |---:|---|---|
 | 0 | Repository foundation, roles and contracts | **COMPLETE** — commit `741f540` |
-| 1 | Contract examples validate against schemas | **PARTIAL** — JSON syntax validated; formal JSON Schema validation still required |
-| 2 | Simulator → FastAPI → SQLite → readable response | **NEXT** |
-| 3 | Intelligence normal/warning decisions | NOT STARTED |
-| 4 | Automation state/actions observable | NOT STARTED |
-| 5 | One-screen dashboard integration | NOT STARTED |
+| 1 | Contract examples validate against schemas | **COMPLETE** — executable JSON Schema checks |
+| 2 | Simulator → FastAPI → SQLite → readable response | **COMPLETE** — integrated prototype branch |
+| 3 | Intelligence normal/warning decisions | **PARTIAL** — validated features merged; fallback adapter runs the website |
+| 4 | Automation state/actions observable | **COMPLETE FOR PROTOTYPE** — incidents and dispatch observable |
+| 5 | One-screen dashboard integration | **COMPLETE FOR PROTOTYPE** — React/Leaflet/Recharts command centre |
 | 6 | Wokwi nodes replace simulator input | NOT STARTED |
 | 7 | Physical nodes replace Wokwi | NOT STARTED |
 | 8 | Full failure matrix and cold-start rehearsal | NOT STARTED |
@@ -450,3 +450,43 @@ Intelligence review recovered from Jhasmitha's submission:
 - Mirrored contract files must not be integrated; the repository-root contracts remain authoritative.
 - `packet_warning.json` is only an abnormal candidate fixture, not an approved WARNING threshold.
 - Feature extraction needs a real Pytest suite before Risk/Confidence work begins.
+
+### 2026-08-30 — One-time Full Stack prototype sprint
+
+Sources synchronized:
+
+- Analyze Full Stack Work
+- Recall Full Stack Chat
+- Current Git repository and all local/remote branches
+
+Implementation decisions:
+
+- Created `fullstack/prototype-command-center` from current `main`, retaining the merged
+  validated feature extractor and carrying forward the verified Full Stack API baseline.
+- Kept the manual three-workstream workflow unchanged; this is the explicitly requested
+  one-time acceleration for a runnable prototype.
+- Added FastAPI ingestion using the authoritative contract validator, SQLite history,
+  duplicate-sequence rejection, overview and incident-dispatch routes.
+- Added an isolated deterministic fallback in `apps/api/decision.py`. It is transparent
+  prototype logic, not an Isolation Forest or exact-collapse prediction claim.
+- Added Normal, Warning, Critical and Sensor Failure scenarios for Node A and Node B.
+- Added a React/Vite command centre with Leaflet local XY geometry, Recharts history,
+  separate Risk/Confidence, sensors, trend, explanations, incidents and Alpha/Bravo dispatch.
+- Added `scripts/start-prototype.sh`; generated databases, dependencies and builds stay
+  outside Git.
+
+Verification:
+
+- Ruff lint/format and formal contract validation passed.
+- Eleven Python tests passed, including Risk/Confidence separation and duplicate handling.
+- Frontend production build and ESLint passed.
+- A live Critical scenario persisted two incidents and demonstrated neighbour correlation.
+- Browser verification rendered WARNING, dispatched Unit Alpha and had no console errors.
+
+Remaining boundary:
+
+- Jhasmitha's final intelligence implementation should replace only the fallback decision
+  adapter while preserving the frozen decision response.
+- Wokwi or ESP32-S3 traffic should post the unchanged contract to `/api/v1/readings`.
+- Missing heartbeat, recovery, authentication and production cybersecurity remain later
+  checkpoints. This website is a hackathon prototype, not a certified safety system.

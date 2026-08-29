@@ -9,6 +9,9 @@ credentials.h
 __pycache__/
 *.py[cod]
 .venv/
+data/*.db
+apps/dashboard/node_modules/
+apps/dashboard/dist/
 venv/
 .pytest_cache/
 .mypy_cache/
@@ -39,4 +42,3 @@ build/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
-

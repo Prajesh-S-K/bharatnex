@@ -64,3 +64,16 @@ The concise current continuation point is maintained in [`docs/CURRENT_HANDOFF.m
 All contributors must follow [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md). GitHub automatically checks Python style/formatting, shared contracts, tests, whitespace and common credential assignments.
 
 The first shared milestone is: **simulator → API → SQLite → reading visible**.
+
+## Run the integrated prototype
+
+After creating `.venv`, installing `requirements.txt`, and running `npm install` in
+`apps/dashboard/`, start both services with:
+
+```bash
+./scripts/start-prototype.sh
+```
+
+Open `http://127.0.0.1:5173`. Use the Normal, Warning, Critical and Sensor Failure
+controls to generate repeatable Node A/B packets. The local SQLite file is intentionally
+ignored by Git.
