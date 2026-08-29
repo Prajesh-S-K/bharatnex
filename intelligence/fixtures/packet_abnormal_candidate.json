@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "node_id": "NODE_B",
+  "sequence": 1,
+  "timestamp": "2026-08-29T16:34:00Z",
+  "sensors": {
+    "tilt_x_deg": 6.0,
+    "tilt_y_deg": 4.5,
+    "vibration_g": 1.4,
+    "displacement_mm": 38.0
+  },
+  "health": {
+    "mpu6050_ok": true,
+    "displacement_input_ok": true,
+    "connection_ok": true
+  }
+}
