@@ -22,6 +22,12 @@ For full recovery, read [`RECOVERY_BACKUP.md`](RECOVERY_BACKUP.md).
   dispatch, reassignment audit, inspection updates, rejection, assistance, acknowledgement,
   operator resolution, role sessions, reset and WebSocket fan-out. Continue with verification
   and commit this layer before editing the phone UI.
+- Backend lifecycle checkpoint is committed at `aa779b5`.
+- Phone PWA is implemented and visually/end-to-end verified but not yet committed. It includes
+  persistent Alpha/Bravo identity, PIN session, live/polling updates, offline shell and queued
+  updates, local-XY route progress, full inspection lifecycle, rejection, assistance, checklist,
+  findings and camera attachment. Browser proof completed Alpha dispatch → acceptance → route →
+  on-site → inspection → completion, returning Alpha to AVAILABLE with no new console errors.
 
 ## Verified commands
 

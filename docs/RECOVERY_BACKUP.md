@@ -505,3 +505,8 @@ Remaining boundary:
   operator and automated-demo integration.
 - Demo reporting intervals: NORMAL 5 s, WATCH 2 s, WARNING 1 s, CRITICAL 500 ms; three missed
   intervals mark a node offline. These are prototype timings, not industrial settings.
+- Checkpoint `aa779b5` preserves the backend inspection lifecycle, unit state, role sessions,
+  audit trail and WebSocket layer with 13 passing Python tests.
+- The next uncommitted layer adds the installable Android PWA. A real browser workflow verified
+  automatic Critical dispatch to Alpha, every lifecycle transition, findings submission and
+  return to AVAILABLE. Continue by committing the PWA, then add operator/demo integration.
