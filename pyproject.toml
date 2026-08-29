@@ -11,6 +11,5 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pytest.ini_options]
-testpaths = ["apps/api/tests", "intelligence/tests", "simulator/tests", "tests"]
+testpaths = ["tests"]
 addopts = "-ra --strict-markers"
-

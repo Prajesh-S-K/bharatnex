@@ -387,6 +387,7 @@ All four collaborator accounts were verified as existing GitHub profiles. Invita
 - Added GitHub Actions checks for linting, formatting, contracts, tests, whitespace and common credential assignments.
 - Added `docs/CODING_STANDARDS.md` with workstream-specific and repository-wide expectations.
 - Verified the guardrails locally: both contract examples passed schema validation, the shared test passed, and Ruff lint/format checks passed.
+- The first GitHub Actions run found that untracked empty workstream test directories cannot be used as required CI paths. Pytest discovery was corrected to the tracked shared `tests/` directory until workstream tests exist.
 - Branch/ruleset protection remains a separate repository-permission decision.
 
 ## Mandatory backup-update procedure
