@@ -9,6 +9,7 @@
 - Keep pull requests small and tied to one issue or integration checkpoint.
 - Never commit secrets, Wi-Fi credentials, generated databases, trained model binaries, or dependency folders.
 - Preserve the simulator as a fallback even after hardware integration.
+- Follow `docs/CODING_STANDARDS.md` and run the documented quality checks before review.
 
 ## Branch names
 

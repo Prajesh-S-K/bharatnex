@@ -1,0 +1,49 @@
+name: Quality checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  repository-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install quality tools
+        run: python -m pip install --upgrade pip -r requirements-dev.txt
+
+      - name: Check Python style
+        run: ruff check .
+
+      - name: Check Python formatting
+        run: ruff format --check .
+
+      - name: Validate shared contracts
+        run: python scripts/validate_contracts.py
+
+      - name: Run tests
+        run: pytest
+
+      - name: Reject whitespace errors
+        run: git diff --check HEAD^
+
+      - name: Scan tracked files for common credential assignments
+        shell: bash
+        run: |
+          if git grep -nEi '(password|api[_-]?key|secret|token|ssid)[[:space:]]*=[[:space:]]*[^$<{[:space:]]' -- ':!*.example' ':!.github/workflows/*'; then
+            echo "Potential credential-like assignment found in tracked files."
+            exit 1
+          fi
+

@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** GitHub workstream ownership recorded; collaborator invitations pending confirmation/acceptance
+**Backup status:** ownership and quality workflow published; four collaborator invitations pending acceptance
 
 ## Recovery instruction for a new task
 
@@ -378,6 +378,16 @@ Verified and assigned the supplied GitHub accounts in `CODEOWNERS`:
 - Hardware + IoT: `@S-R-007`, `@ssrohit2403-art`, `@rithishdr067-cmyk`.
 
 All four collaborator accounts were verified as existing GitHub profiles. Invitations require write-access confirmation and remain pending until sent and accepted.
+
+### 2026-08-30 — Collaborators and clean-code guardrails
+
+- Sent GitHub collaborator invitations to `@Jhasmitha-D`, `@S-R-007`, `@ssrohit2403-art` and `@rithishdr067-cmyk`; all four are pending acceptance.
+- Added `.editorconfig`, shared Python Ruff/Pytest configuration and development dependencies.
+- Added executable JSON Schema validation and a shared contract test.
+- Added GitHub Actions checks for linting, formatting, contracts, tests, whitespace and common credential assignments.
+- Added `docs/CODING_STANDARDS.md` with workstream-specific and repository-wide expectations.
+- Verified the guardrails locally: both contract examples passed schema validation, the shared test passed, and Ruff lint/format checks passed.
+- Branch/ruleset protection remains a separate repository-permission decision.
 
 ## Mandatory backup-update procedure
 

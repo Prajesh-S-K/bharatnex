@@ -61,4 +61,6 @@ scripts/                  Cross-project helper scripts
 
 The concise current continuation point is maintained in [`docs/CURRENT_HANDOFF.md`](docs/CURRENT_HANDOFF.md). Update both recovery files before every material commit or handoff.
 
+All contributors must follow [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md). GitHub automatically checks Python style/formatting, shared contracts, tests, whitespace and common credential assignments.
+
 The first shared milestone is: **simulator → API → SQLite → reading visible**.
