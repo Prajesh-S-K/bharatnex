@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "node_id": "NODE_B",
+  "timestamp": "2026-08-29T16:35:00Z",
+  "state": "WARNING",
+  "risk": 74,
+  "confidence": 86,
+  "trend": "RISING",
+  "reason_codes": ["SENSOR_ANOMALY", "DISPLACEMENT_RISING", "NEAR_ACTIVE_FACE"],
+  "actions": ["HIGH_RATE_MONITORING", "CREATE_INCIDENT"]
+}
+

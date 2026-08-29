@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smart-mine.local/contracts/v1/sensor-reading.schema.json",
+  "title": "SMART-MINE Sensor Reading v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "node_id", "sequence", "timestamp", "sensors", "health"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "node_id": { "type": "string", "enum": ["NODE_A", "NODE_B"] },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "sensors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tilt_x_deg", "tilt_y_deg", "vibration_g", "displacement_mm"],
+      "properties": {
+        "tilt_x_deg": { "type": "number" },
+        "tilt_y_deg": { "type": "number" },
+        "vibration_g": { "type": "number", "minimum": 0 },
+        "displacement_mm": { "type": "number", "minimum": 0 }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mpu6050_ok", "displacement_input_ok", "connection_ok"],
+      "properties": {
+        "mpu6050_ok": { "type": "boolean" },
+        "displacement_input_ok": { "type": "boolean" },
+        "connection_ok": { "type": "boolean" }
+      }
+    }
+  }
+}
+

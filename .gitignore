@@ -1,0 +1,42 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+secrets.h
+credentials.h
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# JavaScript
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Runtime data and models
+*.db
+*.sqlite
+*.sqlite3
+intelligence/models/*.joblib
+intelligence/models/*.pkl
+logs/
+
+# Embedded builds
+.pio/
+build/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
