@@ -37,7 +37,7 @@ jobs:
         run: python -m pytest
 
       - name: Reject whitespace errors
-        run: git show --check --oneline --format= HEAD
+        run: python scripts/check_whitespace.py
 
       - name: Scan tracked files for common credential assignments
         shell: bash

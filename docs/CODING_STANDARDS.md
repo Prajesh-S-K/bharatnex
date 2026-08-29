@@ -73,9 +73,9 @@ python -m pip install -r requirements-dev.txt
 ruff check .
 ruff format --check .
 python scripts/validate_contracts.py
+python scripts/check_whitespace.py
 pytest
 git diff --check
 ```
 
 GitHub runs the same core checks for every pull request and push to `main`.
-
