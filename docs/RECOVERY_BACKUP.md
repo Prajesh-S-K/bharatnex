@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** integrated prototype verified on `fullstack/prototype-command-center`; push/PR pending
+**Backup status:** phone-module completion sprint in progress on `fullstack/prototype-command-center`
 
 ## Recovery instruction for a new task
 
@@ -490,3 +490,18 @@ Remaining boundary:
 - Wokwi or ESP32-S3 traffic should post the unchanged contract to `/api/v1/readings`.
 - Missing heartbeat, recovery, authentication and production cybersecurity remain later
   checkpoints. This website is a hackathon prototype, not a certified safety system.
+
+### 2026-08-30 — Inspection phone completion sprint started
+
+- User approved a shared responsive/installable React PWA with locally stored Alpha/Bravo
+  identity, offline assignment cache and queued synchronization.
+- Target phones: OnePlus Nord CE5 on Android 16/OxygenOS and Moto G86 Power 5G on Android
+  16 at 2712×1220.
+- Frozen lifecycle: DISPATCHED → ACCEPTED → EN_ROUTE → ON_SITE → INSPECTION_STARTED →
+  COMPLETED, with rejection reason, reassignment audit, operator-only resolution and
+  emergency assistance request.
+- Phones use laptop Wi-Fi/hotspot, WebSocket updates with polling fallback and fixed local-XY
+  movement. The immediate implementation order is backend lifecycle/audit, then PWA, then
+  operator and automated-demo integration.
+- Demo reporting intervals: NORMAL 5 s, WATCH 2 s, WARNING 1 s, CRITICAL 500 ms; three missed
+  intervals mark a node offline. These are prototype timings, not industrial settings.

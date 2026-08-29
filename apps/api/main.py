@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from apps.api.realtime import EventHub
 from apps.api.routes import router
 from apps.api.storage import Database
 
@@ -16,6 +17,8 @@ DATA_PATH = Path(__file__).resolve().parents[2] / "data" / "smart_mine.db"
 async def lifespan(application: FastAPI):
     application.state.database = Database(DATA_PATH)
     application.state.database.initialize()
+    application.state.sessions = {}
+    application.state.event_hub = EventHub()
     yield
 
 

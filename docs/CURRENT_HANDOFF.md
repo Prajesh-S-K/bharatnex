@@ -13,6 +13,15 @@ For full recovery, read [`RECOVERY_BACKUP.md`](RECOVERY_BACKUP.md).
 - Incidents and deterministic Alpha/Bravo dispatch are available.
 - The React/Vite command centre renders local-XY Leaflet geometry, Recharts history,
   node sensors, explainability and dispatch.
+- **IN-PROGRESS CHECKPOINT:** inspection-phone completion sprint started on
+  `fullstack/prototype-command-center`. Target devices are OnePlus Nord CE5 (Android 16,
+  OxygenOS `CPH2717_16.0.5.1002(EX01B100P01)`) and Moto G86 Power 5G (Android 16,
+  2712×1220, `W1VNS36H.60-82-6`). If work is interrupted, inspect uncommitted changes and
+  continue with backend inspection lifecycle before the PWA.
+- Backend lifecycle layer is now implemented but not yet committed: unit state, nearest-unit
+  dispatch, reassignment audit, inspection updates, rejection, assistance, acknowledgement,
+  operator resolution, role sessions, reset and WebSocket fan-out. Continue with verification
+  and commit this layer before editing the phone UI.
 
 ## Verified commands
 
