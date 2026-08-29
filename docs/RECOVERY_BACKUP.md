@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** ownership published, four invitations pending acceptance, GitHub quality workflow verified passing
+**Backup status:** synchronized through FS-01 correction and Jhasmitha feature-extraction review
 
 ## Recovery instruction for a new task
 
@@ -415,3 +415,34 @@ After an explicit `sync and continue` request:
 5. Record which tasks were read and what changed.
 
 This process provides recoverability, but no local document can automatically capture changes made in another task until that task is read and synchronized.
+
+### 2026-08-30 — Second planning-task synchronization
+
+Sources read:
+
+- Analyze Full Stack Work
+- Recall Full Stack Chat
+
+Repository findings:
+
+- Work is on `fullstack/checkpoint-2-ingestion` at commit `44ae2a8`, based on synchronized `main` commit `7ef0c0f`.
+- FS-01 added FastAPI, `/health`, `requirements.txt` and the API package.
+- The commit lacked a final newline in `apps/api/main.py`, causing Ruff format verification to fail.
+- The feature branch had no automated health-endpoint test and was not yet pushed.
+- The earlier process reported on port 8000 was no longer reachable during this audit; manual runtime output is therefore not the completion proof.
+
+Corrections made during this audit:
+
+- Fixed formatting/newline compliance in `apps/api/main.py`.
+- Added an automated smoke test that verifies `/health` is registered for GET and returns the expected payload. An initial TestClient approach was removed because FastAPI 0.141 deprecated the installed httpx integration.
+- FS-01 must pass all local checks and GitHub Actions before being marked complete.
+
+Intelligence review recovered from Jhasmitha's submission:
+
+- Her packet fields now align with the frozen v1 contract.
+- Malformed packets should be rejected, while structurally valid packets with false health flags remain valid input for downstream Confidence handling.
+- Her feature extraction may flatten the validated packet internally without changing the external contract.
+- Her schema path must resolve the repository-root `contracts/sensor-reading.schema.json`, not an `intelligence/contracts/` copy.
+- Mirrored contract files must not be integrated; the repository-root contracts remain authoritative.
+- `packet_warning.json` is only an abnormal candidate fixture, not an approved WARNING threshold.
+- Feature extraction needs a real Pytest suite before Risk/Confidence work begins.

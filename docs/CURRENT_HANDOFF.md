@@ -10,12 +10,12 @@ For full recovery, read [`RECOVERY_BACKUP.md`](RECOVERY_BACKUP.md).
 - Public GitHub repository: `https://github.com/Prajesh-S-K/bharatnex`.
 - GitHub workstream owners are recorded in `CODEOWNERS`; four collaborator invitations were sent and are pending acceptance.
 - Clean-code standards and pull-request quality checks are configured.
-- Feature code: not started.
+- Full Stack branch `fullstack/checkpoint-2-ingestion` contains FS-01: FastAPI app, `/health`, runtime dependencies and an automated health smoke test.
 - Contracts: v1 files created; JSON syntax checked.
 
 ## Next action
 
-Build integration Checkpoint 2:
+Continue integration Checkpoint 2 after FS-01 passes and is pushed:
 
 ```text
 Contract-compatible simulator
