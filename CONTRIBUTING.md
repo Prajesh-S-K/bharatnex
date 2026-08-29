@@ -3,6 +3,8 @@
 ## Working independently
 
 - Work only inside your owned area unless coordinating a shared change.
+- Read `docs/RECOVERY_BACKUP.md` and `docs/CURRENT_HANDOFF.md` before beginning a new work session.
+- Update the recovery backup, checkpoint status and handoff before every material commit or team handoff.
 - Do not rename contract fields locally. Propose changes in a dedicated contract pull request.
 - Keep pull requests small and tied to one issue or integration checkpoint.
 - Never commit secrets, Wi-Fi credentials, generated databases, trained model binaries, or dependency folders.
@@ -45,4 +47,3 @@ docs(shared): clarify warning transition
 4. Dashboard renders contract-compatible API responses.
 5. Wokwi nodes replace the simulator without backend changes.
 6. Physical nodes replace Wokwi without contract changes.
-

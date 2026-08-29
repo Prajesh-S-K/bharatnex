@@ -52,11 +52,13 @@ scripts/                  Cross-project helper scripts
 
 ## Start working
 
-1. Read [`docs/PROJECT_MASTER.md`](docs/PROJECT_MASTER.md).
-2. Read your workstream guide and [`CONTRIBUTING.md`](CONTRIBUTING.md).
-3. Build against `contracts/sensor-reading.schema.json`—never invent different field names.
-4. Use a feature branch such as `fullstack/ingestion`, `ai/risk-engine`, or `iot/node-a`.
-5. Integrate through examples and tests before connecting physical hardware.
+1. For complete restoration or handoff, read [`docs/RECOVERY_BACKUP.md`](docs/RECOVERY_BACKUP.md).
+2. Read [`docs/PROJECT_MASTER.md`](docs/PROJECT_MASTER.md).
+3. Read your workstream guide and [`CONTRIBUTING.md`](CONTRIBUTING.md).
+4. Build against `contracts/sensor-reading.schema.json`—never invent different field names.
+5. Use a feature branch such as `fullstack/ingestion`, `ai/risk-engine`, or `iot/node-a`.
+6. Integrate through examples and tests before connecting physical hardware.
+
+The concise current continuation point is maintained in [`docs/CURRENT_HANDOFF.md`](docs/CURRENT_HANDOFF.md). Update both recovery files before every material commit or handoff.
 
 The first shared milestone is: **simulator → API → SQLite → reading visible**.
-
