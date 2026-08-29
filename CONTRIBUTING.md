@@ -1,12 +1,14 @@
 # Collaboration guide
 
+The default team process is the lightweight [`docs/MANUAL_CHAT_WORKFLOW.md`](docs/MANUAL_CHAT_WORKFLOW.md). This file contains the rules that still apply when a checkpoint is ready to commit or merge.
+
 ## Working independently
 
 - Work only inside your owned area unless coordinating a shared change.
 - Read `docs/RECOVERY_BACKUP.md` and `docs/CURRENT_HANDOFF.md` before beginning a new work session.
-- Update the recovery backup, checkpoint status and handoff before every material commit or team handoff.
+- Update the recovery backup and handoff after an accepted decision, completed/blocked checkpoint, synchronization or team handoff. Temporary debugging attempts do not each need an entry.
 - Do not rename contract fields locally. Propose changes in a dedicated contract pull request.
-- Keep pull requests small and tied to one issue or integration checkpoint.
+- Use one pull request per completed integration checkpoint; intermediate manual edits may remain on the active workstream branch.
 - Never commit secrets, Wi-Fi credentials, generated databases, trained model binaries, or dependency folders.
 - Preserve the simulator as a fallback even after hardware integration.
 - Follow `docs/CODING_STANDARDS.md` and run the documented quality checks before review.

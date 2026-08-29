@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** ownership published, four invitations pending acceptance, GitHub quality workflow verified passing
+**Backup status:** manual chat-guided workflow adopted; FS-01 pushed; Intelligence corrections pending
 
 ## Recovery instruction for a new task
 
@@ -415,3 +415,23 @@ After an explicit `sync and continue` request:
 5. Record which tasks were read and what changed.
 
 This process provides recoverability, but no local document can automatically capture changes made in another task until that task is read and synchronized.
+
+### 2026-08-30 — Manual chat-guided workflow adopted
+
+The user chose to stop continuous agentic work mode and continue through short, manual, chat-guided checkpoints like the two planning conversations.
+
+Repository/process decisions:
+
+- Keep the repository, frozen contracts, CODEOWNERS and automated quality checks.
+- Reduce process overhead: one active branch per workstream and one pull request per completed checkpoint.
+- Contributors manually make one small change, run the requested check and paste the result into their workstream chat for review.
+- The implementation task is used for explicit synchronization, repository audits, integration corrections and recovery updates.
+- Backup files are updated for accepted outcomes and meaningful state changes, not every temporary debugging message.
+- Added `docs/MANUAL_CHAT_WORKFLOW.md` as the default operating guide.
+
+Current synchronized implementation state carried into this workflow:
+
+- Full Stack FS-01 is pushed on `fullstack/checkpoint-2-ingestion` and is awaiting pull-request review/merge.
+- The Full Stack branch contains the FastAPI application, `/health`, runtime dependencies, automated health test and clean-machine CI dependency correction.
+- Jhasmitha's feature-extraction design is mostly aligned, but schema-path correction and a real Pytest suite are required before integration.
+- No Intelligence, simulator or Hardware/IoT branch was present in the remote branch audit.

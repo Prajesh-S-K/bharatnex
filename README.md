@@ -63,4 +63,6 @@ The concise current continuation point is maintained in [`docs/CURRENT_HANDOFF.m
 
 All contributors must follow [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md). GitHub automatically checks Python style/formatting, shared contracts, tests, whitespace and common credential assignments.
 
+For the team's lightweight, chat-guided operating process, use [`docs/MANUAL_CHAT_WORKFLOW.md`](docs/MANUAL_CHAT_WORKFLOW.md). It keeps Git and review simple while preserving contracts, tests and recovery backups.
+
 The first shared milestone is: **simulator → API → SQLite → reading visible**.
