@@ -24,6 +24,12 @@ Sources cross-checked before writing this file: contracts/sensor-reading.schema.
 contracts/decision.schema.json, docs/PROJECT_MASTER.md ("State behaviour" table and
 "Threshold values are provisional and must be recorded in the intelligence configuration"
 rule), docs/workstreams/intelligence.md.
+
+Threshold calibration note: the sensor thresholds below were revised from an initial
+arbitrary round-number draft to align with the ranges the shared simulator and Full
+Stack prototype actually demonstrate (normal/warning/critical bands supplied by
+integration review). They are still demonstration/synthetic calibration values, not
+validated mine-safety limits -- see PROTOTYPE_STATUS.
 """
 
 from __future__ import annotations
@@ -133,18 +139,22 @@ class SensorThresholdSet(NamedTuple):
     status: str = PROTOTYPE_STATUS
 
 
-#: Chosen as clean, round numbers clearly unrelated to either contract example packet
-#: (baseline: tilt~0.4/0.2 deg, vibration 0.08g, displacement 1.2mm; abnormal-candidate
-#: fixture: tilt 6.0/4.5 deg, vibration 1.4g, displacement 38.0mm) so no one mistakes
-#: them for a value copied from a real reading. tilt_x/tilt_y share the same tiers
-#: because the schema treats both axes identically (no documented reason to weight one
-#: axis differently yet).
+#: Calibrated to align with the ranges the shared simulator and Full Stack prototype
+#: currently demonstrate for each state (per integration review, 2026-08-30):
+#:   displacement -- normal ~1.0-1.2mm, warning ~2.8-3.2mm, critical ~6.8-7.4mm
+#:   tilt         -- warning ~2.1-2.3deg, critical ~4.9-5.8deg
+#:   vibration    -- warning ~0.27-0.30g, critical ~0.62-0.75g
+#: An earlier draft used arbitrary round numbers (3/8/20 deg, 8/20/60mm) that were
+#: NOT calibrated against the demo and would have kept the shared Critical scenario
+#: below WATCH for displacement. tilt_x/tilt_y still share the same tiers because the
+#: schema treats both axes identically (no documented reason to weight one differently).
+#: Still demonstration/synthetic calibration, not a validated mine-safety limit.
 PROTOTYPE_SENSOR_THRESHOLDS: MappingProxyType[str, SensorThresholdSet] = MappingProxyType(
     {
-        "tilt_x_deg": SensorThresholdSet(watch=3.0, warning=8.0, critical=20.0, unit="deg"),
-        "tilt_y_deg": SensorThresholdSet(watch=3.0, warning=8.0, critical=20.0, unit="deg"),
-        "vibration_g": SensorThresholdSet(watch=0.3, warning=0.9, critical=2.5, unit="g"),
-        "displacement_mm": SensorThresholdSet(watch=8.0, warning=20.0, critical=60.0, unit="mm"),
+        "tilt_x_deg": SensorThresholdSet(watch=1.5, warning=2.0, critical=4.0, unit="deg"),
+        "tilt_y_deg": SensorThresholdSet(watch=1.5, warning=2.0, critical=4.0, unit="deg"),
+        "vibration_g": SensorThresholdSet(watch=0.15, warning=0.25, critical=0.55, unit="g"),
+        "displacement_mm": SensorThresholdSet(watch=2.0, warning=3.0, critical=6.0, unit="mm"),
     }
 )
 
@@ -169,3 +179,36 @@ PROTOTYPE_CONFIDENCE_WEIGHTS: MappingProxyType[str, ConfidenceWeight] = MappingP
         "connection_ok": ConfidenceWeight(points=100.0 / 3),
     }
 )
+
+
+# ---------------------------------------------------------------------------
+# Named profile indirection.
+#
+# Risk/Confidence/state modules should import ACTIVE_PROFILE (or its fields) rather
+# than the module-level PROTOTYPE_* constants directly, so a future calibrated or
+# industrial profile can be swapped in later by changing ACTIVE_PROFILE here -- not
+# by editing risk.py/confidence.py/decision.py.
+# ---------------------------------------------------------------------------
+
+
+class IntelligenceProfile(NamedTuple):
+    """One named, swappable bundle of sensor thresholds and confidence weights."""
+
+    name: str
+    status: str
+    sensor_thresholds: MappingProxyType[str, SensorThresholdSet]
+    confidence_weights: MappingProxyType[str, ConfidenceWeight]
+
+
+#: The only profile that exists today. References the same PROTOTYPE_* objects above
+#: (no copying), so there is exactly one source for each number.
+PROTOTYPE_PROFILE = IntelligenceProfile(
+    name="prototype-synthetic-v1",
+    status=PROTOTYPE_STATUS,
+    sensor_thresholds=PROTOTYPE_SENSOR_THRESHOLDS,
+    confidence_weights=PROTOTYPE_CONFIDENCE_WEIGHTS,
+)
+
+#: The profile future Intelligence modules should read. Swapping to a calibrated or
+#: industrial profile later means changing this one line, not any consuming module.
+ACTIVE_PROFILE: IntelligenceProfile = PROTOTYPE_PROFILE

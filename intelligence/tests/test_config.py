@@ -12,13 +12,28 @@ from intelligence import config
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SENSOR_SCHEMA_PATH = REPO_ROOT / "contracts" / "sensor-reading.schema.json"
+NORMAL_EXAMPLE_PATH = REPO_ROOT / "contracts" / "examples" / "sensor-reading.normal.json"
 
 FORBIDDEN_SENSOR_FIELDS = {"crack", "edge_risk", "battery", "gas", "gas_ppm", "co2", "methane"}
 
 
-def _load_schema() -> dict:
-    with SENSOR_SCHEMA_PATH.open(encoding="utf-8") as file:
+def _load_json(path: Path) -> dict:
+    with path.open(encoding="utf-8") as file:
         return json.load(file)
+
+
+def _load_schema() -> dict:
+    return _load_json(SENSOR_SCHEMA_PATH)
+
+
+def _representative_warning_value(thresholds: config.SensorThresholdSet) -> float:
+    """A value solidly inside the WARNING band: the midpoint between warning and critical."""
+    return thresholds.warning + (thresholds.critical - thresholds.warning) / 2
+
+
+def _representative_critical_value(thresholds: config.SensorThresholdSet) -> float:
+    """A value solidly inside CRITICAL: one warning-to-critical band width past critical."""
+    return thresholds.critical + (thresholds.critical - thresholds.warning)
 
 
 def test_all_four_frozen_sensor_features_have_configuration():
@@ -89,6 +104,37 @@ def test_configuration_structures_are_immutable():
         config.PROTOTYPE_SENSOR_THRESHOLDS["tilt_x_deg"] = None
     with pytest.raises(AttributeError):
         config.PROTOTYPE_SENSOR_THRESHOLDS["tilt_x_deg"].watch = 999.0
+    with pytest.raises(TypeError):
+        config.ACTIVE_PROFILE.sensor_thresholds["tilt_x_deg"] = None
+
+
+def test_current_normal_example_remains_below_watch_for_every_sensor():
+    normal_packet = _load_json(NORMAL_EXAMPLE_PATH)
+    sensors = normal_packet["sensors"]
+    for feature, thresholds in config.PROTOTYPE_SENSOR_THRESHOLDS.items():
+        assert sensors[feature] < thresholds.watch, feature
+
+
+def test_representative_warning_values_enter_the_warning_tier():
+    for feature, thresholds in config.PROTOTYPE_SENSOR_THRESHOLDS.items():
+        value = _representative_warning_value(thresholds)
+        assert thresholds.warning <= value < thresholds.critical, feature
+
+
+def test_representative_critical_values_enter_the_critical_tier():
+    for feature, thresholds in config.PROTOTYPE_SENSOR_THRESHOLDS.items():
+        value = _representative_critical_value(thresholds)
+        assert value >= thresholds.critical, feature
+
+
+def test_active_profile_wraps_the_prototype_data_without_duplicating_it():
+    """ACTIVE_PROFILE must reference the same objects as the module-level constants --
+    not a copy -- so there is exactly one source of truth for each threshold/weight."""
+    assert config.ACTIVE_PROFILE is config.PROTOTYPE_PROFILE
+    assert config.ACTIVE_PROFILE.sensor_thresholds is config.PROTOTYPE_SENSOR_THRESHOLDS
+    assert config.ACTIVE_PROFILE.confidence_weights is config.PROTOTYPE_CONFIDENCE_WEIGHTS
+    assert config.ACTIVE_PROFILE.name  # non-empty, named
+    assert config.ACTIVE_PROFILE.status == config.PROTOTYPE_STATUS
 
 
 def test_configuration_can_be_imported_consistently():
