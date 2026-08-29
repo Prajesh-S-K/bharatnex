@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** ownership and quality workflow published; four collaborator invitations pending acceptance
+**Backup status:** ownership published, four invitations pending acceptance, GitHub quality workflow verified passing
 
 ## Recovery instruction for a new task
 
@@ -391,6 +391,7 @@ All four collaborator accounts were verified as existing GitHub profiles. Invita
 - The second run exposed a CI import-path difference. `scripts` was made an explicit Python package, the repository root was added to Pytest's path, and CI now invokes `python -m pytest` consistently.
 - The third run passed code/tests but exposed a shallow-clone assumption in the whitespace command. It was replaced with a current-commit check that does not require `HEAD^`.
 - Git's commit whitespace mode also treated intentional Markdown line breaks as failures. A tracked-file validator now checks code/configuration while respecting the repository's Markdown setting.
+- GitHub Actions Quality checks run #5 completed successfully for commit `91bc0fb`; linting, formatting, schema validation, tests, whitespace and credential-pattern checks are operational.
 - Branch/ruleset protection remains a separate repository-permission decision.
 
 ## Mandatory backup-update procedure
