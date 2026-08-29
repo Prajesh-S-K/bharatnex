@@ -8,6 +8,7 @@ For full recovery, read [`RECOVERY_BACKUP.md`](RECOVERY_BACKUP.md).
 - Current branch: `main`.
 - Baseline commit: `741f540`.
 - Public GitHub repository: `https://github.com/Prajesh-S-K/bharatnex`.
+- GitHub workstream owners are recorded in `CODEOWNERS`; four collaborator invitations are pending.
 - Feature code: not started.
 - Contracts: v1 files created; JSON syntax checked.
 

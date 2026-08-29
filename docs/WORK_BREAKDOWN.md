@@ -13,6 +13,16 @@
 
 Adjust names only through an agreed documentation update; folder ownership remains the stable three-workstream model.
 
+## GitHub ownership
+
+| Workstream | Lead/collaborators |
+|---|---|
+| Full Stack | `@Prajesh-S-K` |
+| Agentic AI + ML/LLM | `@Jhasmitha-D` |
+| Hardware + IoT | `@S-R-007`, `@ssrohit2403-art`, `@rithishdr067-cmyk` |
+
+The repository is public, but collaborators still require an accepted GitHub invitation before they can push. Folder review ownership is defined in the root `CODEOWNERS` file.
+
 ## Integration checkpoints
 
 1. **Contract:** examples validate against schemas.
@@ -22,4 +32,3 @@ Adjust names only through an agreed documentation update; folder ownership remai
 5. **Dashboard:** full decision and system health are visible on one screen.
 6. **Wokwi:** virtual nodes replace simulator input.
 7. **Physical:** real nodes replace Wokwi; simulator remains fallback.
-

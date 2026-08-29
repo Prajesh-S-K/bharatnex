@@ -6,8 +6,8 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Default branch:** `main`  
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
-**Backup last updated:** 2026-08-29  
-**Backup status:** public GitHub repository created, connected and synchronized with `main`
+**Backup last updated:** 2026-08-30
+**Backup status:** GitHub workstream ownership recorded; collaborator invitations pending confirmation/acceptance
 
 ## Recovery instruction for a new task
 
@@ -368,6 +368,16 @@ Consolidated outcomes:
 - Selected a public repository intentionally so the team can clone and inspect it without repository-visibility restrictions.
 - Connected local `origin` and pushed the full `main` history successfully.
 - Collaborator assignment remains pending until the three GitHub usernames are supplied.
+
+### 2026-08-30 — GitHub workstream ownership
+
+Verified and assigned the supplied GitHub accounts in `CODEOWNERS`:
+
+- Full Stack: `@Prajesh-S-K` (repository owner).
+- Agentic AI + ML/LLM: `@Jhasmitha-D`.
+- Hardware + IoT: `@S-R-007`, `@ssrohit2403-art`, `@rithishdr067-cmyk`.
+
+All four collaborator accounts were verified as existing GitHub profiles. Invitations require write-access confirmation and remain pending until sent and accepted.
 
 ## Mandatory backup-update procedure
 

@@ -1,8 +1,9 @@
-# Replace placeholders with GitHub usernames after the repository is published.
-/apps/                         @full-stack-team
-/intelligence/                 @ai-team
-/firmware/                     @hardware-iot-team
-/simulator/                    @hardware-iot-team @ai-team
-/contracts/                    @full-stack-team @ai-team @hardware-iot-team
-/docs/architecture/            @full-stack-team @ai-team @hardware-iot-team
-
+# Workstream ownership for Prajesh-S-K/bharatnex.
+/apps/                         @Prajesh-S-K
+/intelligence/                 @Jhasmitha-D
+/firmware/                     @S-R-007 @ssrohit2403-art @rithishdr067-cmyk
+/simulator/                    @Jhasmitha-D @S-R-007 @ssrohit2403-art @rithishdr067-cmyk
+/contracts/                    @Prajesh-S-K @Jhasmitha-D @S-R-007 @ssrohit2403-art @rithishdr067-cmyk
+/docs/architecture/            @Prajesh-S-K @Jhasmitha-D @S-R-007 @ssrohit2403-art @rithishdr067-cmyk
+/docs/RECOVERY_BACKUP.md       @Prajesh-S-K
+/docs/CURRENT_HANDOFF.md       @Prajesh-S-K
