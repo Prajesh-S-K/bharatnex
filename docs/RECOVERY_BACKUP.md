@@ -5,8 +5,9 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Repository:** `/Users/prajeshsivaprakash/Documents/ChatGPT/bharatnex`  
 **Default branch:** `main`  
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
+**GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-29  
-**Backup status:** synchronized through the repository-foundation phase
+**Backup status:** public GitHub repository created; initial push pending/completing
 
 ## Recovery instruction for a new task
 
@@ -360,6 +361,13 @@ Consolidated outcomes:
 - Created baseline commit `741f540`.
 - Next task: build Checkpoint 2, beginning with the contract-compatible simulator and FastAPI/SQLite ingestion path.
 
+### 2026-08-29 — GitHub publication
+
+- Created the public GitHub repository `Prajesh-S-K/bharatnex`.
+- Verified that tracked files contain no obvious committed credentials before publication.
+- Selected a public repository intentionally so the team can clone and inspect it without repository-visibility restrictions.
+- Collaborator assignment remains pending until the three GitHub usernames are supplied.
+
 ## Mandatory backup-update procedure
 
 Before every material commit or handoff:
@@ -381,4 +389,3 @@ After an explicit `sync and continue` request:
 5. Record which tasks were read and what changed.
 
 This process provides recoverability, but no local document can automatically capture changes made in another task until that task is read and synchronized.
-
