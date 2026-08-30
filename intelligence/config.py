@@ -262,3 +262,60 @@ class StaleEvidencePenalty(NamedTuple):
 #: single stale reading meaningfully lowers Confidence without being able to swing an
 #: otherwise fully-healthy reading below the halfway point on its own.
 PROTOTYPE_STALE_EVIDENCE_PENALTY = StaleEvidencePenalty(points=30.0)
+
+
+# ---------------------------------------------------------------------------
+# Temporal evidence tuning (I-05).
+# ---------------------------------------------------------------------------
+
+
+class PrototypeTrendTuning(NamedTuple):
+    """Tuning for the deterministic trend/persistence evaluator.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    min_points_for_trend: int
+    flat_slope_per_step: float
+    persistent_min_streak: int
+    status: str = PROTOTYPE_STATUS
+
+
+#: min_points_for_trend=3: the least a straight-line slope can mean anything from;
+#: fewer than that reports INSUFFICIENT_DATA rather than guessing a direction.
+#: flat_slope_per_step=3.0: a Risk-points-per-reading-step dead zone below which
+#: reading-to-reading noise should not be reported as RISING/FALLING.
+#: persistent_min_streak=3: consecutive readings at/above the WARNING risk anchor
+#: before PERSISTENT_EVENT is raised, so one noisy spike doesn't count as persistent.
+PROTOTYPE_TREND_TUNING = PrototypeTrendTuning(
+    min_points_for_trend=3,
+    flat_slope_per_step=3.0,
+    persistent_min_streak=3,
+)
+
+
+# ---------------------------------------------------------------------------
+# Neighbour correlation tuning (I-06).
+# ---------------------------------------------------------------------------
+
+
+class PrototypeCorrelationTuning(NamedTuple):
+    """Tuning for Node A / Node B neighbour-correlation evaluation.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    window_seconds: float
+    min_trustworthy_confidence: float
+    status: str = PROTOTYPE_STATUS
+
+
+#: window_seconds=30.0: round default "nearby in time" window for two independent
+#: node readings to be considered part of the same event.
+#: min_trustworthy_confidence=50.0: reuses the 0-100 Confidence scale's natural
+#: midpoint -- below it, a neighbour's own evidence is not trusted enough to count
+#: as independent corroboration, regardless of what its Risk score says.
+PROTOTYPE_CORRELATION_TUNING = PrototypeCorrelationTuning(
+    window_seconds=30.0,
+    min_trustworthy_confidence=50.0,
+)
