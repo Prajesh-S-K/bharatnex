@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** ownership published, four invitations pending acceptance, GitHub quality workflow verified passing
+**Backup status:** Real Intelligence pipeline (I-02–I-09) wired into `apps/api/decision.py`, replacing the deterministic fallback, and live-verified on `fullstack/intelligence-integration`
 
 ## Recovery instruction for a new task
 
@@ -297,11 +297,11 @@ Workstreams may implement independently, but they may not invent independent int
 | # | Checkpoint | Status |
 |---:|---|---|
 | 0 | Repository foundation, roles and contracts | **COMPLETE** — commit `741f540` |
-| 1 | Contract examples validate against schemas | **PARTIAL** — JSON syntax validated; formal JSON Schema validation still required |
-| 2 | Simulator → FastAPI → SQLite → readable response | **NEXT** |
-| 3 | Intelligence normal/warning decisions | NOT STARTED |
-| 4 | Automation state/actions observable | NOT STARTED |
-| 5 | One-screen dashboard integration | NOT STARTED |
+| 1 | Contract examples validate against schemas | **COMPLETE** — executable JSON Schema checks |
+| 2 | Simulator → FastAPI → SQLite → readable response | **COMPLETE** — integrated prototype branch |
+| 3 | Intelligence normal/warning decisions | **COMPLETE FOR PROTOTYPE** — real Risk/Confidence/state-machine/anomaly pipeline wired into `apps/api/decision.py`, live-verified |
+| 4 | Automation state/actions observable | **COMPLETE FOR PROTOTYPE** — incidents and dispatch observable, live-verified |
+| 5 | One-screen dashboard integration | **COMPLETE FOR PROTOTYPE** — React/Leaflet/Recharts command centre, live-verified incl. mobile PWA |
 | 6 | Wokwi nodes replace simulator input | NOT STARTED |
 | 7 | Physical nodes replace Wokwi | NOT STARTED |
 | 8 | Full failure matrix and cold-start rehearsal | NOT STARTED |
@@ -415,3 +415,374 @@ After an explicit `sync and continue` request:
 5. Record which tasks were read and what changed.
 
 This process provides recoverability, but no local document can automatically capture changes made in another task until that task is read and synchronized.
+
+### 2026-08-30 — Second planning-task synchronization
+
+Sources read:
+
+- Analyze Full Stack Work
+- Recall Full Stack Chat
+
+Repository findings:
+
+- Work is on `fullstack/checkpoint-2-ingestion` at commit `44ae2a8`, based on synchronized `main` commit `7ef0c0f`.
+- FS-01 added FastAPI, `/health`, `requirements.txt` and the API package.
+- The commit lacked a final newline in `apps/api/main.py`, causing Ruff format verification to fail.
+- The feature branch had no automated health-endpoint test and was not yet pushed.
+- The earlier process reported on port 8000 was no longer reachable during this audit; manual runtime output is therefore not the completion proof.
+
+Corrections made during this audit:
+
+- Fixed formatting/newline compliance in `apps/api/main.py`.
+- Added an automated smoke test that verifies `/health` is registered for GET and returns the expected payload. An initial TestClient approach was removed because FastAPI 0.141 deprecated the installed httpx integration.
+- All local checks passed: two Pytest tests, Ruff lint/format, contract validation, tracked-file whitespace and Git diff checks.
+- Pushed corrected Full Stack branch `fullstack/checkpoint-2-ingestion` at commit `b4400fc`.
+- Remote audit found only `main` and the Full Stack branch; no Intelligence, simulator or Hardware/IoT branches had been pushed yet.
+- FS-01 is locally verified and ready for pull-request review; it is not yet merged into `main`.
+- Corrected GitHub Actions to install both runtime and development dependencies; otherwise the clean PR runner would fail when `tests/test_health.py` imports FastAPI.
+
+Intelligence review recovered from Jhasmitha's submission:
+
+- Her packet fields now align with the frozen v1 contract.
+- Malformed packets should be rejected, while structurally valid packets with false health flags remain valid input for downstream Confidence handling.
+- Her feature extraction may flatten the validated packet internally without changing the external contract.
+- Her schema path must resolve the repository-root `contracts/sensor-reading.schema.json`, not an `intelligence/contracts/` copy.
+- Mirrored contract files must not be integrated; the repository-root contracts remain authoritative.
+- `packet_warning.json` is only an abnormal candidate fixture, not an approved WARNING threshold.
+- Feature extraction needs a real Pytest suite before Risk/Confidence work begins.
+
+### 2026-08-30 — One-time Full Stack prototype sprint
+
+Sources synchronized:
+
+- Analyze Full Stack Work
+- Recall Full Stack Chat
+- Current Git repository and all local/remote branches
+
+Implementation decisions:
+
+- Created `fullstack/prototype-command-center` from current `main`, retaining the merged
+  validated feature extractor and carrying forward the verified Full Stack API baseline.
+- Kept the manual three-workstream workflow unchanged; this is the explicitly requested
+  one-time acceleration for a runnable prototype.
+- Added FastAPI ingestion using the authoritative contract validator, SQLite history,
+  duplicate-sequence rejection, overview and incident-dispatch routes.
+- Added an isolated deterministic fallback in `apps/api/decision.py`. It is transparent
+  prototype logic, not an Isolation Forest or exact-collapse prediction claim.
+- Added Normal, Warning, Critical and Sensor Failure scenarios for Node A and Node B.
+- Added a React/Vite command centre with Leaflet local XY geometry, Recharts history,
+  separate Risk/Confidence, sensors, trend, explanations, incidents and Alpha/Bravo dispatch.
+- Added `scripts/start-prototype.sh`; generated databases, dependencies and builds stay
+  outside Git.
+
+Verification:
+
+- Ruff lint/format and formal contract validation passed.
+- Eleven Python tests passed, including Risk/Confidence separation and duplicate handling.
+- Frontend production build and ESLint passed.
+- A live Critical scenario persisted two incidents and demonstrated neighbour correlation.
+- Browser verification rendered WARNING, dispatched Unit Alpha and had no console errors.
+
+Remaining boundary:
+
+- Jhasmitha's final intelligence implementation should replace only the fallback decision
+  adapter while preserving the frozen decision response.
+- Wokwi or ESP32-S3 traffic should post the unchanged contract to `/api/v1/readings`.
+- Missing heartbeat, recovery, authentication and production cybersecurity remain later
+  checkpoints. This website is a hackathon prototype, not a certified safety system.
+
+### 2026-08-30 — Inspection phone completion sprint started
+
+- User approved a shared responsive/installable React PWA with locally stored Alpha/Bravo
+  identity, offline assignment cache and queued synchronization.
+- Target phones: OnePlus Nord CE5 on Android 16/OxygenOS and Moto G86 Power 5G on Android
+  16 at 2712×1220.
+- Frozen lifecycle: DISPATCHED → ACCEPTED → EN_ROUTE → ON_SITE → INSPECTION_STARTED →
+  COMPLETED, with rejection reason, reassignment audit, operator-only resolution and
+  emergency assistance request.
+- Phones use laptop Wi-Fi/hotspot, WebSocket updates with polling fallback and fixed local-XY
+  movement. The immediate implementation order is backend lifecycle/audit, then PWA, then
+  operator and automated-demo integration.
+- Demo reporting intervals: NORMAL 5 s, WATCH 2 s, WARNING 1 s, CRITICAL 500 ms; three missed
+  intervals mark a node offline. These are prototype timings, not industrial settings.
+- Checkpoint `aa779b5` preserves the backend inspection lifecycle, unit state, role sessions,
+  audit trail and WebSocket layer with 13 passing Python tests.
+- The next uncommitted layer adds the installable Android PWA. A real browser workflow verified
+  automatic Critical dispatch to Alpha, every lifecycle transition, findings submission and
+  return to AVAILABLE. Continue by committing the PWA, then add operator/demo integration.
+
+
+### 2026-08-30 — Full Stack prototype completion checkpoint
+
+Checkpoint status:
+
+- Backend inspection workflow committed at `aa779b5`.
+- Mobile inspection PWA committed at `9a60a54`.
+
+### 2026-08-30 — Guarded local n8n automation
+
+- Installed the local `qwen2.5-coder:7b` Ollama model for bounded offline summaries.
+- Recovered Docker Desktop from a stuck backend and verified engine version 29.7.2.
+- The registry's `latest` n8n image contained an empty entrypoint; replaced it with pinned
+  stable n8n `2.32.7` and verified `/healthz`.
+- Added `automation/` with a localhost-only Docker Compose service, persistent n8n data,
+  an allowlisted read-only runner and three importable workflows.
+- The runner accepts only the fixed `quality-gate` operation and exposes no arbitrary command
+  or file-write interface.
+- Imported the runner token into n8n's encrypted HTTP Header credential store; global workflow
+  access to container environment variables remains blocked.
+- Verified n8n → runner end to end: 13 Python tests, Ruff lint/format, contract validation,
+  whitespace, frontend lint/build and Git diff all passed.
+- Verified n8n → Ollama end to end using the local handoff-summary workflow.
+- At this checkpoint n8n was limited to reporting and summarization; the later constrained coding
+  checkpoint below supersedes that boundary for isolated worktrees only.
+- Owner onboarding and obsolete-draft cleanup were pending here and completed in the following
+  checkpoint.
+
+### 2026-08-30 — Local idea-to-checkpoint pipeline
+
+- Completed n8n owner onboarding and archived the three obsolete workflow drafts; four current
+  workflows remain visible.
+- Added a protected, published form at `http://127.0.0.1:5678/form/smart-mine-idea` using n8n
+  user authentication.
+- Added an Ollama coding runner that creates one isolated Git worktree per task, limits model
+  context and writes to the selected workstream only.
+- Contracts, automation code, GitHub configuration, secrets and cross-workstream paths are
+  structurally blocked.
+- The runner attempts at most two repairs, commits only after tests/lint/build pass, and never
+  pushes or merges.
+- Added 13 automation guardrail tests; the full repository now has 26 passing Python tests.
+- A documentation-only end-to-end proof created branch
+  `automation/20260830-033046-create-docs-automation-proof-md-with`, checkpoint `cfe493b`, and
+  stopped locally before push or merge.
+- The proof exposed final-newline churn from full-file local-model output; the writer now
+  normalizes text files to a final newline and a regression test covers it.
+- Local automation reduces hosted-token consumption for repetitive implementation, but local
+  model output is not guaranteed error-free and still requires checkpoint review.
+- Operator/demo/integration checkpoint implemented and browser-verified.
+- The active branch remains `fullstack/prototype-command-center`.
+- The branch is currently two committed checkpoints ahead of its remote before the final
+  operator/demo checkpoint is committed.
+
+Checkpoint 3 implementation:
+
+- Added operator authentication, incident acknowledgement and controlled resolution.
+- Added automatic judge-demo sequencing across baseline, rising risk, Critical dispatch,
+  automated inspection completion and final completion state.
+- Added the Node Offline demo scenario.
+- Added CSV reading export and printable incident reporting.
+- Added gateway authentication and command acknowledgement support.
+- Added prototype configuration and reporting-interval support.
+- Added cross-platform prototype launch/support tooling.
+- Added phone setup and integration documentation.
+- Added operator-specific dashboard styling and controls.
+- Preserved Risk and Confidence as separate values and kept the deterministic fallback
+  intelligence isolated from the final Intelligence workstream.
+- Gateway and simulator integration continue to use the frozen v1 sensor contract.
+
+Final browser verification:
+
+- Judge Demo successfully progressed through:
+  BASELINE → RISING RISK → CRITICAL + DISPATCH → INSPECTION DEMO → COMPLETE.
+- Critical Node A/B data rendered correctly with separate Risk and Confidence.
+- Automated inspection completion was verified through the backend.
+- Alpha/Bravo inspection workflow returned to the expected completed/available state.
+- Mine Panel Overview now renders the Leaflet local-XY mine geometry and sensor nodes.
+- The Leaflet map fix uses explicit local 0–100 bounds, `fitBounds()` and size
+  invalidation rather than an external tile/GNSS map.
+- No underground GNSS capability is claimed.
+- No blocking browser issue remains in the tested demo path.
+
+Final verification before checkpoint commit:
+
+- Python test suite: 13 passed.
+- Ruff lint: passed.
+- Ruff format check: passed.
+- Contract validation: passed.
+- `git diff --check`: passed.
+- Frontend ESLint: passed.
+- Vite production build: passed.
+- npm audit: 0 vulnerabilities.
+- `scripts/prototype_tools.py check`: passed.
+- Vite reports a non-blocking bundle-size warning above 500 kB; optimization is deferred
+  because it does not block the prototype.
+
+Next exact action:
+
+1. Commit the completed operator/demo/integration checkpoint.
+2. Push `fullstack/prototype-command-center`.
+3. Review the complete branch diff and pull request before merging into `main`.
+4. Do not replace the temporary deterministic decision adapter until Jhasmitha's
+   contract-compatible Intelligence implementation is reviewed and ready.
+5. Hardware/simulator producers must continue sending the unchanged frozen v1 packet.
+
+### 2026-08-30 — Full Stack finalization (FS-F01–FS-F08) on `fullstack/final-software`
+
+Branched from `fullstack/prototype-command-center` at `5a87afc` per the finalization
+instructions. Worked checkpoint-by-checkpoint with a live backend + dashboard + mobile
+PWA running throughout, not just static review; every fix below was reproduced with a
+failing test/live repro first, then confirmed fixed.
+
+Real defects found and repaired:
+
+- `apps/api/realtime.py`: `EventHub.publish()` only caught `RuntimeError`, but
+  Starlette's `WebSocket.send()` re-raises a genuinely dropped connection (Wi-Fi loss,
+  closed tab) as `WebSocketDisconnect`. One stale client crashed the whole broadcast
+  loop and blocked delivery to every connection after it. Reproduced with a failing
+  test, fixed by catching both exception types.
+- `apps/api/storage.py`: `Database.save()` only rejected an exact duplicate sequence.
+  A late-arriving OLDER sequence was silently inserted and then read back as the
+  node's "latest" state (`latest()` orders by insertion id, not sequence), reverting
+  an already-escalated node to stale sensor data. Now rejected with the same 409 path
+  as a duplicate. Also: connections were never explicitly closed, which failed
+  same-process file cleanup on Windows (reproduced directly); all query paths now go
+  through a context manager that always closes the connection.
+- `apps/api/routes.py` / `apps/dashboard/src/App.jsx`: the WATCH demo scenario was
+  missing, exactly as the finalization instructions flagged as a possibility. Added a
+  contract-compatible entry calibrated into the WATCH risk band and the matching
+  frontend button; verified live (state=WATCH, risk=35, confidence=88).
+- `apps/dashboard/src/styles.css`: `main.jsx` unconditionally imports both
+  `styles.css` (desktop dashboard) and `inspection.css` (mobile PWA) regardless of
+  route. `styles.css` had a bare `body{min-width:1180px}` meant only for the desktop
+  2-column layout; it leaked into the inspection PWA and broke it on every mobile
+  viewport (measured live: 1231px scrollWidth inside a 375px viewport, identity
+  screen rendered off-center). Scoped the rule with `:has(.phone-shell)` so it only
+  applies when the desktop dashboard is mounted. Verified no horizontal overflow at
+  375×812, 390×844 and 412×915, and that the desktop dashboard's own layout is
+  unchanged.
+
+Live verification performed (backend + frontend + mobile PWA running together):
+
+- Full Judge Demo: BASELINE → RISING RISK → CRITICAL + DISPATCH → INSPECTION DEMO →
+  COMPLETE, zero unexplained console errors.
+- Complete incident lifecycle via the UI: create → auto-dispatch → auto-complete →
+  acknowledge → operator sign-in → resolve, and the printable report / CSV export
+  both verified with real data.
+- Full mobile inspection lifecycle driven through the actual PWA (login → accept →
+  en route → on site → inspection started → checklist/findings → submit → unit
+  returns to AVAILABLE), confirmed in the incident's audit trail.
+- Alpha + Bravo independence verified at the API level with two separate tokens: each
+  unit sees only its own assignment, one unit's action does not affect the other's,
+  and a unit attempting to update the other's incident is correctly rejected (404).
+- Gateway authentication: missing/invalid credential → 401, valid → accepted (tested
+  with `SMART_MINE_GATEWAY_KEY` actually configured, not just the default unset path).
+- Malformed-packet handling: missing field, invalid `node_id`, missing `sensors`,
+  wrong datatype, unknown property — all return structured 422, never 500.
+- Duplicate and older-sequence packets both correctly return 409.
+- Restart/persistence: created incidents, readings and a completed inspection,
+  restarted the FastAPI process, confirmed all of it (3 incidents, 16 readings, the
+  completed inspection's notes) survived intact.
+- Reset Demo: requires operator auth (401 without it), clears to a known empty state.
+- PWA basics: manifest loads, service worker registers, icon loads, service worker
+  correctly passes `/api/` requests through uncached.
+
+Final verification:
+
+- Python test suite: 30 passed (13 pre-existing + 17 new/hardening).
+- Ruff lint/format: passed. Contract validation: passed. Whitespace check: passed.
+  `git diff --check`: passed.
+- Frontend ESLint: passed. Vite production build: passed (same pre-existing
+  non-blocking >500kB chunk warning, not addressed — correctness over bundle size
+  per the finalization instructions). npm audit: 0 vulnerabilities.
+- Credential scan (`git grep -nEi 'password|secret|api[_-]?key|token'`) manually
+  reviewed: no hardcoded secrets, no `.env` tracked.
+
+Known limitations not exercised live (reasoned from code, not defects found):
+
+- Offline action queue: `InspectionApp.jsx`'s `flushQueue()` can theoretically be
+  invoked concurrently by both the `online` event listener and the `useEffect` on
+  `[online]` change, which could in principle double-submit a queued action under a
+  network-flap race. Not reproduced; flagged for whoever owns this area next.
+- WebSocket reconnect banner and offline queueing were verified by code reading and
+  by the `EventHub` crash-survival fix/tests, not by physically toggling network
+  connectivity in the browser.
+- The `computer`-tool click action hung consistently on the `/inspection` route
+  specifically (screenshots/JS execution on that page worked fine throughout,
+  including full interaction via `element.click()` and React-safe input setters) —
+  worked around it for all mobile testing; most likely tied to the PWA's persistent
+  WebSocket connection confusing the tool's own "settled" heuristic, not a product
+  defect (the same interactions succeed instantly on the desktop dashboard route).
+
+Next exact action:
+
+1. Review branch `fullstack/final-software` (HEAD `7eaf9a9`) and its diff against
+   `fullstack/prototype-command-center`.
+2. Do not merge — wait for Prajesh's review per the finalization instructions.
+3. Decide whether to fold this branch into `fullstack/prototype-command-center` or
+   merge directly to `main`.
+
+### 2026-08-30 — Final website integration
+
+- Reviewed `origin/fullstack/final-software` at `ab6c010` and integrated its five commits into
+  `fullstack/integrated-prototype`, based on the n8n-enabled prototype at `5284971`.
+- Preserved both the Full Stack finalization record and the guarded n8n/Ollama recovery history;
+  the older branch documentation was not allowed to overwrite later automation checkpoints.
+- Integrated dropped-WebSocket isolation, stale/out-of-order sequence rejection, explicit
+  SQLite connection closure, WATCH demo state, real dashboard WebSocket status and mobile CSS
+  isolation.
+- Frozen sensor and decision contracts remained unchanged. The deterministic prototype decision
+  adapter remains in place pending separate Intelligence review.
+- Combined verification passed: 43 Python tests, Ruff lint/format, contract validation,
+  whitespace, frontend ESLint/build, npm audit with zero vulnerabilities and `git diff --check`.
+- Live browser verification passed for SYSTEM LIVE, WATCH (Risk 35 / Confidence 88), Critical
+  Risk 100 with dispatch, and inspection PWA widths 375, 390 and 412 px without overflow.
+- No browser console warnings or errors were observed in the verified desktop or phone paths.
+- The integrated API and dashboard were started locally on ports 8000 and 5173 for prototype use.
+- Next action: push `fullstack/integrated-prototype`, review its PR, then merge to `main` only
+  after explicit approval.
+
+### 2026-08-30 — Real Intelligence pipeline replaces the deterministic fallback
+
+Branched `fullstack/intelligence-integration` from `fullstack/integrated-prototype` at `3e89032`
+(the merge that already carried the full I-03–I-10 Intelligence implementation into
+`intelligence/`, unused by the website until this checkpoint). This closes the exact gap the
+previous checkpoint's "Remaining boundary" flagged: the fallback adapter has now been replaced.
+
+Implementation:
+
+- Rewrote `apps/api/decision.py` as a thin adapter: `evaluate(packet, history, neighbour)` calls
+  `intelligence.orchestrator.orchestrate_decision()` and returns its frozen decision dict
+  unchanged. `intelligence/` imports are confined to this one file, per
+  [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)'s adapter boundary.
+- The hysteresis state machine (`intelligence.state_machine.evaluate_state`, a pure function of
+  `previous_state`/`streak`/`risk`/`confidence`) is replayed over each node's stored reading
+  history on every call to reconstruct `(previous_state, streak)`. This required no SQLite schema
+  change and no change to the frozen `decision.schema.json` shape.
+- Isolation Forest anomaly evidence (I-09) trains once from a synthetic baseline and is cached
+  in-process; a training failure degrades to `anomaly_evidence=None` without breaking the
+  deterministic pipeline, preserving I-09's optional-by-design boundary.
+- Updated both `apps/api/routes.py` call sites (`ingest_reading`, `run_demo`) to pass full
+  per-node history instead of a single previous reading, matching the adapter's new signature.
+- Recalibrated NODE_B's WATCH demo scenario (`0.14g` → `0.18g` vibration) after the real Risk
+  formula placed the old value just under the WATCH threshold; `intelligence/config.py`'s
+  `STATE_ACTIONS["CRITICAL"]` gained `HIGH_RATE_MONITORING` as its first action to match the
+  already-shipped dashboard's expected action ordering.
+- `automation/` (n8n/Ollama) and the unrelated uncommitted `apps/api/auth.py` edit noted in
+  Prajesh's own working session were deliberately left untouched — out of scope for this
+  integration.
+
+Verification:
+
+- 145 Python tests passed (Full Stack + `intelligence/tests` + shared contract tests). Ruff
+  lint/format, contract validation, tracked-file whitespace and `git diff --check` all passed.
+- Restarted both the API (port 8000) and dashboard (port 5173) servers from a clean process to
+  guarantee the running code matched the new adapter, not a stale reload.
+- Live Judge Demo run end to end through the real pipeline: NODE A reached Risk 98 / Confidence
+  100 / CRITICAL / RISING with `reason_codes` including `SENSOR_ANOMALY` — direct proof the real
+  Isolation Forest is contributing evidence, not the old fallback — and `actions` led with
+  `HIGH_RATE_MONITORING`, matching the config fix above.
+- Confirmed the hysteresis design live: a WATCH-scenario reading taken immediately after a
+  CRITICAL streak correctly stayed in `CRITICAL` at low risk (32.5) because de-escalation
+  requires several consecutive calmer, confident readings — expected behaviour, not a defect.
+- Incident lifecycle re-verified against the new decision source: automatic dispatch to Alpha and
+  Bravo, `POST /api/v1/incidents/{id}/acknowledge` returned 200 and updated the UI.
+- Mobile layout re-checked at 375×812 with no horizontal overflow.
+- Console verified clean on a freshly opened tab (0 errors); a stale buffered WebSocket-error log
+  from the server restart on the original tab was confirmed non-live and discounted.
+
+Next exact action:
+
+1. Push `fullstack/intelligence-integration`.
+2. Open the pull request against `fullstack/integrated-prototype` (or `main`, per Prajesh's
+   preference) — the branch is verification-clean and ready to merge without further fixes.
+3. Prajesh reviews and merges.

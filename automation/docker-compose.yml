@@ -1,0 +1,31 @@
+services:
+  n8n:
+    image: ${N8N_IMAGE:-docker.n8n.io/n8nio/n8n:2.32.7}
+    container_name: bharatnex-n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      N8N_HOST: 127.0.0.1
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: ${N8N_TIMEZONE:-Asia/Kolkata}
+      TZ: ${N8N_TIMEZONE:-Asia/Kolkata}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_TEMPLATES_ENABLED: "false"
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: 168
+      AUTOMATION_RUNNER_TOKEN: ${AUTOMATION_RUNNER_TOKEN}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5-coder:7b}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../:/workspace:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  n8n_data:
+    name: bharatnex_n8n_data

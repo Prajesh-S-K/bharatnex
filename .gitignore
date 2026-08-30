@@ -9,6 +9,9 @@ credentials.h
 __pycache__/
 *.py[cod]
 .venv/
+data/*.db
+apps/dashboard/node_modules/
+apps/dashboard/dist/
 venv/
 .pytest_cache/
 .mypy_cache/
@@ -28,6 +31,10 @@ coverage/
 intelligence/models/*.joblib
 intelligence/models/*.pkl
 logs/
+automation/.env
+automation/*.log
+automation/*.pid
+.automation-worktrees/
 
 # Embedded builds
 .pio/
@@ -39,4 +46,4 @@ build/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
-
+.claude/

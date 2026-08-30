@@ -1,0 +1,60 @@
+{
+  "name": "SMART-MINE Local Handoff Summary",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Run Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8010/v1/quality-gate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {"timeout": 300000}
+      },
+      "id": "quality-gate",
+      "name": "Run Allowlisted Checks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bharatnex-runner-auth",
+          "name": "SMART-MINE Runner Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: 'qwen2.5-coder:7b', stream: false, messages: [{ role: 'system', content: 'Summarize this software quality report in at most 8 concise bullets. State pass/fail and failed checks. The next action must be human review; never recommend deployment, merge, push, contract changes, or safety decisions. Do not invent results.' }, { role: 'user', content: JSON.stringify($json) }] }) }}",
+        "options": {"timeout": 300000}
+      },
+      "id": "ollama-summary",
+      "name": "Summarize Locally with Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Run Manually": {
+      "main": [[{"node": "Run Allowlisted Checks", "type": "main", "index": 0}]]
+    },
+    "Run Allowlisted Checks": {
+      "main": [[{"node": "Summarize Locally with Ollama", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"},
+  "active": false,
+  "versionId": "8b62c22b-a070-4f91-904f-c49673f9ab1e"
+}

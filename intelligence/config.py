@@ -94,15 +94,18 @@ ACTIONS: tuple[str, ...] = (
     "DISPATCH_INSPECTION",
 )
 
-#: Recommended actions per state, taken verbatim from docs/PROJECT_MASTER.md's
-#: "State behaviour" table (not invented here; only centralized so it is not
-#: retyped independently by each future module).
+#: Recommended actions per state, taken from docs/PROJECT_MASTER.md's "State
+#: behaviour" table and aligned with the already-shipped Full Stack fallback
+#: adapter (apps/api/decision.py) so replacing the fallback doesn't change what
+#: actions a CRITICAL reading recommends -- CRITICAL keeps HIGH_RATE_MONITORING
+#: in addition to the safety-specific actions, matching that prior behaviour.
 STATE_ACTIONS: MappingProxyType[str, tuple[str, ...]] = MappingProxyType(
     {
         "NORMAL": ("BASELINE_LOGGING",),
         "WATCH": ("INCREASE_MONITORING",),
         "WARNING": ("HIGH_RATE_MONITORING", "CREATE_INCIDENT"),
         "CRITICAL": (
+            "HIGH_RATE_MONITORING",
             "SAFETY_RECOMMENDATION",
             "CREATE_INCIDENT",
             "ACTIVATE_BUZZER",
@@ -212,3 +215,197 @@ PROTOTYPE_PROFILE = IntelligenceProfile(
 #: The profile future Intelligence modules should read. Swapping to a calibrated or
 #: industrial profile later means changing this one line, not any consuming module.
 ACTIVE_PROFILE: IntelligenceProfile = PROTOTYPE_PROFILE
+
+
+# ---------------------------------------------------------------------------
+# Risk-score scale anchors (I-03).
+#
+# The 0-100 per-feature Risk scale is a transparent piecewise-linear mapping through
+# these five calibration points: physical zero -> 0, the profile's WATCH threshold ->
+# 25, WARNING -> 50, CRITICAL -> 80, and one more WATCH-WARNING-sized band above
+# CRITICAL -> 100 (capped beyond that). These are scale anchors, not sensor thresholds
+# -- they apply identically to every feature regardless of its physical units -- so
+# they live here once instead of being retyped as 25/50/80/100 in risk.py, trend.py
+# and any later module that needs to reason about the same 0-100 scale.
+# ---------------------------------------------------------------------------
+
+RISK_SCALE_ANCHORS: MappingProxyType[str, float] = MappingProxyType(
+    {
+        "physical_zero": 0.0,
+        "watch": 25.0,
+        "warning": 50.0,
+        "critical": 80.0,
+        "cap": 100.0,
+    }
+)
+
+
+# ---------------------------------------------------------------------------
+# Confidence evidence-gap penalty (I-04).
+#
+# Confidence is built primarily from the three health flags (PROTOTYPE_CONFIDENCE_
+# WEIGHTS above). This penalty is the second Confidence input the checkpoint calls
+# for: "missing/delayed evidence". A caller (a future temporal/orchestration module)
+# marks a reading as stale/gapped; this many points are deducted, floored at 0. Not
+# derived from Risk in any way -- Confidence must never be derived from Risk.
+# ---------------------------------------------------------------------------
+
+
+class StaleEvidencePenalty(NamedTuple):
+    """Points deducted from Confidence when a reading is flagged as stale/delayed.
+
+    NOT a validated weighting -- see `status`.
+    """
+
+    points: float
+    status: str = PROTOTYPE_STATUS
+
+
+#: Round number: roughly one health flag's worth of weight (100/3 ~= 33), chosen so a
+#: single stale reading meaningfully lowers Confidence without being able to swing an
+#: otherwise fully-healthy reading below the halfway point on its own.
+PROTOTYPE_STALE_EVIDENCE_PENALTY = StaleEvidencePenalty(points=30.0)
+
+
+# ---------------------------------------------------------------------------
+# Temporal evidence tuning (I-05).
+# ---------------------------------------------------------------------------
+
+
+class PrototypeTrendTuning(NamedTuple):
+    """Tuning for the deterministic trend/persistence evaluator.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    min_points_for_trend: int
+    flat_slope_per_step: float
+    persistent_min_streak: int
+    status: str = PROTOTYPE_STATUS
+
+
+#: min_points_for_trend=3: the least a straight-line slope can mean anything from;
+#: fewer than that reports INSUFFICIENT_DATA rather than guessing a direction.
+#: flat_slope_per_step=3.0: a Risk-points-per-reading-step dead zone below which
+#: reading-to-reading noise should not be reported as RISING/FALLING.
+#: persistent_min_streak=3: consecutive readings at/above the WARNING risk anchor
+#: before PERSISTENT_EVENT is raised, so one noisy spike doesn't count as persistent.
+PROTOTYPE_TREND_TUNING = PrototypeTrendTuning(
+    min_points_for_trend=3,
+    flat_slope_per_step=3.0,
+    persistent_min_streak=3,
+)
+
+
+# ---------------------------------------------------------------------------
+# Neighbour correlation tuning (I-06).
+# ---------------------------------------------------------------------------
+
+
+class PrototypeCorrelationTuning(NamedTuple):
+    """Tuning for Node A / Node B neighbour-correlation evaluation.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    window_seconds: float
+    min_trustworthy_confidence: float
+    status: str = PROTOTYPE_STATUS
+
+
+#: window_seconds=30.0: round default "nearby in time" window for two independent
+#: node readings to be considered part of the same event.
+#: min_trustworthy_confidence=50.0: reuses the 0-100 Confidence scale's natural
+#: midpoint -- below it, a neighbour's own evidence is not trusted enough to count
+#: as independent corroboration, regardless of what its Risk score says.
+PROTOTYPE_CORRELATION_TUNING = PrototypeCorrelationTuning(
+    window_seconds=30.0,
+    min_trustworthy_confidence=50.0,
+)
+
+
+# ---------------------------------------------------------------------------
+# State machine hysteresis (I-07).
+#
+# State bucket boundaries are NOT redeclared here -- they reuse RISK_SCALE_ANCHORS
+# ("watch"=25, "warning"=50, "critical"=80) so there is exactly one place a reading's
+# Risk score maps to a severity tier. This section only adds the anti-flapping rule:
+# escalation (toward a more severe state) is immediate on any single reading, but
+# de-escalation (recovery) requires `deescalation_streak` consecutive, sufficiently
+# confident calmer readings before the state actually steps down.
+# ---------------------------------------------------------------------------
+
+
+class PrototypeStateTuning(NamedTuple):
+    """Tuning for the NORMAL/WATCH/WARNING/CRITICAL state machine's hysteresis.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    deescalation_streak: int
+    status: str = PROTOTYPE_STATUS
+
+
+#: deescalation_streak=3: matches the same round "three in a row" bar used for
+#: PERSISTENT_EVENT detection (I-05) -- distinct mechanism, same defensible round
+#: number, chosen only so a single calmer reading can never immediately erase a
+#: CRITICAL/WARNING state (the classic flapping failure mode at a boundary).
+#: De-escalation also requires confidence >= PROTOTYPE_CORRELATION_TUNING.
+#: min_trustworthy_confidence (reused, not redeclared) -- an untrustworthy "calm"
+#: reading must not count toward recovery.
+PROTOTYPE_STATE_TUNING = PrototypeStateTuning(deescalation_streak=3)
+
+
+# ---------------------------------------------------------------------------
+# Isolation Forest tuning (I-09).
+#
+# Supplementary anomaly evidence only -- see intelligence/anomaly.py module docstring
+# for the hard boundary: it can only ever ADD the SENSOR_ANOMALY reason code; it never
+# computes Risk, Confidence, state, or an action on its own.
+# ---------------------------------------------------------------------------
+
+
+class PrototypeAnomalyTuning(NamedTuple):
+    """Tuning for the Isolation Forest anomaly-evidence model.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    n_estimators: int
+    contamination: float
+    random_state: int
+    calibration_holdout_fraction: float
+    min_calibration_rows: int
+    min_baseline_rows: int
+    calib_high_percentile: float
+    calib_low_percentile: float
+    calib_low_margin_stds: float
+    anomalous_threshold: float
+    status: str = PROTOTYPE_STATUS
+
+
+#: contamination=0.01 (not "auto"): the baseline is pure normal data by construction,
+#: so contamination should reflect "how many baseline points are borderline", not an
+#: assumed outlier rate -- "auto" would push ~10% of the baseline itself negative.
+#: calibration_holdout_fraction=0.3 / min_calibration_rows=5: the 0-1 rescaling range
+#: is calibrated on a held-out slice of the baseline the model was NOT fit on, because
+#: a model scores its own training points more favourably than fresh normal data
+#: (isolation trees partition tightly around exactly what they saw).
+#: calib_high_percentile=40 / calib_low_percentile=5 / calib_low_margin_stds=1.5:
+#: "high" anchors what typical unseen-but-normal data looks like; "low" extends a
+#: margin below the held-out low tail so genuinely novel readings can reach ~1.0.
+#: anomalous_threshold=0.5: the midpoint of the calibrated 0-1 scale -- the simplest
+#: defensible cut point until real calibration data exists.
+#: min_baseline_rows=10: the least data train() will fit a model on at all.
+PROTOTYPE_ANOMALY_TUNING = PrototypeAnomalyTuning(
+    n_estimators=100,
+    contamination=0.01,
+    random_state=42,
+    calibration_holdout_fraction=0.3,
+    min_calibration_rows=5,
+    min_baseline_rows=10,
+    calib_high_percentile=40.0,
+    calib_low_percentile=5.0,
+    calib_low_margin_stds=1.5,
+    anomalous_threshold=0.5,
+)
