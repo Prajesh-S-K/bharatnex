@@ -68,7 +68,10 @@ async def ingest_reading(
     decision = evaluate(packet, history[0] if history else None, latest.get(neighbour_id))
     reading_id, created = store.save(packet, decision)
     if not created:
-        raise HTTPException(status_code=409, detail="Duplicate node sequence")
+        raise HTTPException(
+            status_code=409,
+            detail="Sequence is not newer than the latest stored reading for this node",
+        )
     incident_id = store.open_incident(decision)
     if incident_id and "DISPATCH_INSPECTION" in decision["actions"]:
         store.auto_assign(incident_id, tuple(NODE_POSITIONS[packet["node_id"]]))
