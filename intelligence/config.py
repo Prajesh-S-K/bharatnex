@@ -94,15 +94,18 @@ ACTIONS: tuple[str, ...] = (
     "DISPATCH_INSPECTION",
 )
 
-#: Recommended actions per state, taken verbatim from docs/PROJECT_MASTER.md's
-#: "State behaviour" table (not invented here; only centralized so it is not
-#: retyped independently by each future module).
+#: Recommended actions per state, taken from docs/PROJECT_MASTER.md's "State
+#: behaviour" table and aligned with the already-shipped Full Stack fallback
+#: adapter (apps/api/decision.py) so replacing the fallback doesn't change what
+#: actions a CRITICAL reading recommends -- CRITICAL keeps HIGH_RATE_MONITORING
+#: in addition to the safety-specific actions, matching that prior behaviour.
 STATE_ACTIONS: MappingProxyType[str, tuple[str, ...]] = MappingProxyType(
     {
         "NORMAL": ("BASELINE_LOGGING",),
         "WATCH": ("INCREASE_MONITORING",),
         "WARNING": ("HIGH_RATE_MONITORING", "CREATE_INCIDENT"),
         "CRITICAL": (
+            "HIGH_RATE_MONITORING",
             "SAFETY_RECOMMENDATION",
             "CREATE_INCIDENT",
             "ACTIVATE_BUZZER",

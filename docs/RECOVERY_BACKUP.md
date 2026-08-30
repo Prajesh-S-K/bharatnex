@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** Full Stack finalization and guarded n8n automation integrated and verified on `fullstack/integrated-prototype`
+**Backup status:** Real Intelligence pipeline (I-02–I-09) wired into `apps/api/decision.py`, replacing the deterministic fallback, and live-verified on `fullstack/intelligence-integration`
 
 ## Recovery instruction for a new task
 
@@ -299,7 +299,7 @@ Workstreams may implement independently, but they may not invent independent int
 | 0 | Repository foundation, roles and contracts | **COMPLETE** — commit `741f540` |
 | 1 | Contract examples validate against schemas | **COMPLETE** — executable JSON Schema checks |
 | 2 | Simulator → FastAPI → SQLite → readable response | **COMPLETE** — integrated prototype branch |
-| 3 | Intelligence normal/warning decisions | **PARTIAL** — validated features merged; fallback adapter runs the website |
+| 3 | Intelligence normal/warning decisions | **COMPLETE FOR PROTOTYPE** — real Risk/Confidence/state-machine/anomaly pipeline wired into `apps/api/decision.py`, live-verified |
 | 4 | Automation state/actions observable | **COMPLETE FOR PROTOTYPE** — incidents and dispatch observable, live-verified |
 | 5 | One-screen dashboard integration | **COMPLETE FOR PROTOTYPE** — React/Leaflet/Recharts command centre, live-verified incl. mobile PWA |
 | 6 | Wokwi nodes replace simulator input | NOT STARTED |
@@ -730,3 +730,59 @@ Next exact action:
 - The integrated API and dashboard were started locally on ports 8000 and 5173 for prototype use.
 - Next action: push `fullstack/integrated-prototype`, review its PR, then merge to `main` only
   after explicit approval.
+
+### 2026-08-30 — Real Intelligence pipeline replaces the deterministic fallback
+
+Branched `fullstack/intelligence-integration` from `fullstack/integrated-prototype` at `3e89032`
+(the merge that already carried the full I-03–I-10 Intelligence implementation into
+`intelligence/`, unused by the website until this checkpoint). This closes the exact gap the
+previous checkpoint's "Remaining boundary" flagged: the fallback adapter has now been replaced.
+
+Implementation:
+
+- Rewrote `apps/api/decision.py` as a thin adapter: `evaluate(packet, history, neighbour)` calls
+  `intelligence.orchestrator.orchestrate_decision()` and returns its frozen decision dict
+  unchanged. `intelligence/` imports are confined to this one file, per
+  [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)'s adapter boundary.
+- The hysteresis state machine (`intelligence.state_machine.evaluate_state`, a pure function of
+  `previous_state`/`streak`/`risk`/`confidence`) is replayed over each node's stored reading
+  history on every call to reconstruct `(previous_state, streak)`. This required no SQLite schema
+  change and no change to the frozen `decision.schema.json` shape.
+- Isolation Forest anomaly evidence (I-09) trains once from a synthetic baseline and is cached
+  in-process; a training failure degrades to `anomaly_evidence=None` without breaking the
+  deterministic pipeline, preserving I-09's optional-by-design boundary.
+- Updated both `apps/api/routes.py` call sites (`ingest_reading`, `run_demo`) to pass full
+  per-node history instead of a single previous reading, matching the adapter's new signature.
+- Recalibrated NODE_B's WATCH demo scenario (`0.14g` → `0.18g` vibration) after the real Risk
+  formula placed the old value just under the WATCH threshold; `intelligence/config.py`'s
+  `STATE_ACTIONS["CRITICAL"]` gained `HIGH_RATE_MONITORING` as its first action to match the
+  already-shipped dashboard's expected action ordering.
+- `automation/` (n8n/Ollama) and the unrelated uncommitted `apps/api/auth.py` edit noted in
+  Prajesh's own working session were deliberately left untouched — out of scope for this
+  integration.
+
+Verification:
+
+- 145 Python tests passed (Full Stack + `intelligence/tests` + shared contract tests). Ruff
+  lint/format, contract validation, tracked-file whitespace and `git diff --check` all passed.
+- Restarted both the API (port 8000) and dashboard (port 5173) servers from a clean process to
+  guarantee the running code matched the new adapter, not a stale reload.
+- Live Judge Demo run end to end through the real pipeline: NODE A reached Risk 98 / Confidence
+  100 / CRITICAL / RISING with `reason_codes` including `SENSOR_ANOMALY` — direct proof the real
+  Isolation Forest is contributing evidence, not the old fallback — and `actions` led with
+  `HIGH_RATE_MONITORING`, matching the config fix above.
+- Confirmed the hysteresis design live: a WATCH-scenario reading taken immediately after a
+  CRITICAL streak correctly stayed in `CRITICAL` at low risk (32.5) because de-escalation
+  requires several consecutive calmer, confident readings — expected behaviour, not a defect.
+- Incident lifecycle re-verified against the new decision source: automatic dispatch to Alpha and
+  Bravo, `POST /api/v1/incidents/{id}/acknowledge` returned 200 and updated the UI.
+- Mobile layout re-checked at 375×812 with no horizontal overflow.
+- Console verified clean on a freshly opened tab (0 errors); a stale buffered WebSocket-error log
+  from the server restart on the original tab was confirmed non-live and discounted.
+
+Next exact action:
+
+1. Push `fullstack/intelligence-integration`.
+2. Open the pull request against `fullstack/integrated-prototype` (or `main`, per Prajesh's
+   preference) — the branch is verification-clean and ready to merge without further fixes.
+3. Prajesh reviews and merges.
