@@ -164,6 +164,24 @@ function MineMap({ nodes, selected, onSelect }) {
   return <div ref={host} className="mine-map" />;
 }
 
+// Simple isometric-style projection of a node's [x, y, z] position -- z is a
+// DESIGN-ASSUMPTION depth/level index (see apps/api/routes.py's NODE_POSITIONS
+// comment), not a measured value. Deliberately lightweight: no 3D library, no
+// WebGL, just an offset dot on a flat SVG, per "not graphical... a simple
+// visual representation."
+function IsometricPosition({ x, y, z }) {
+  const screenX = 50 + (x - 50) * 0.6 - z * 0.5;
+  const screenY = 50 - (y - 50) * 0.6 + z * 0.3;
+  return (
+    <svg viewBox="0 0 100 100" className="iso-position" aria-hidden="true">
+      <line x1="10" y1="90" x2="90" y2="90" stroke="#28445b" strokeWidth="1" />
+      <line x1="10" y1="90" x2="10" y2="10" stroke="#28445b" strokeWidth="1" />
+      <line x1="10" y1="90" x2="35" y2="65" stroke="#28445b" strokeWidth="1" strokeDasharray="2 2" />
+      <circle cx={screenX} cy={screenY} r="4" fill="#34d399" />
+    </svg>
+  );
+}
+
 function Gauge({ value, label, color }) {
   return (
     <div
@@ -188,6 +206,7 @@ function App() {
     units: [],
   });
 
+  const [devices, setDevices] = useState([]);
   const [history, setHistory] = useState([]);
   const [selected, setSelected] = useState("NODE_A");
   const [busy, setBusy] = useState(false);
@@ -204,9 +223,10 @@ function App() {
 
   const refresh = useCallback(async () => {
     try {
-      const [overviewResponse, historyResponse] = await Promise.all([
+      const [overviewResponse, historyResponse, devicesResponse] = await Promise.all([
         fetch(`${API}/overview`),
         fetch(`${API}/readings`),
+        fetch(`${API}/devices`),
       ]);
 
       if (!overviewResponse.ok || !historyResponse.ok) {
@@ -215,6 +235,7 @@ function App() {
 
       setOverview(await overviewResponse.json());
       setHistory(await historyResponse.json());
+      setDevices(devicesResponse.ok ? await devicesResponse.json() : []);
       setConnected(true);
     } catch {
       setConnected(false);
@@ -621,6 +642,22 @@ function App() {
                 {node?.online ? "ONLINE" : "NO DATA"}
               </strong>
             </div>
+
+            <div className="position-tile">
+              <span>POSITION (X, Y, Z)</span>
+              <strong>
+                {node?.position?.[0] ?? "—"}, {node?.position?.[1] ?? "—"},{" "}
+                {node?.position?.[2] ?? "—"}
+              </strong>
+              {node?.position && (
+                <IsometricPosition
+                  x={node.position[0]}
+                  y={node.position[1]}
+                  z={node.position[2]}
+                />
+              )}
+              <small className="position-note">Z is a design-assumption depth index, not measured</small>
+            </div>
           </div>
         </article>
 
@@ -857,6 +894,66 @@ function App() {
               )}
             </div>
           )}
+        </article>
+
+        <article className="panel device-health-panel">
+          <div className="panel-title">
+            <div>
+              <span>ESP32-S3 TELEMETRY</span>
+              <h2>Device Health</h2>
+            </div>
+          </div>
+
+          {devices.length === 0 ? (
+            <p className="empty-note">No device health reported yet.</p>
+          ) : (
+            <div className="device-health-grid">
+              {devices.map((device) => (
+                <div key={device.device_id} className={device.chip_temp_warning ? "warn" : ""}>
+                  <span>{device.device_id}</span>
+                  <strong>
+                    {device.chip_temp_c}
+                    <small> °C (die)</small>
+                  </strong>
+                  {device.chip_temp_warning && (
+                    <small className="warn-label">
+                      <AlertTriangle size={12} /> Near safety margin
+                    </small>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <small className="position-note">
+            Die temperature is not an ambient measurement -- see docs/research/vault/00 MASTER
+            CONTROL/Geo-Sentry Sourced Parameter Register.md
+          </small>
+        </article>
+
+        <article className="panel field-proximity-panel">
+          <div className="panel-title">
+            <div>
+              <span>BLE ANCHOR</span>
+              <h2>Field Proximity</h2>
+            </div>
+          </div>
+
+          <div className="field-proximity-grid">
+            {overview.units.map((unit) => (
+              <div key={unit.id} className={unit.closer_to_anchor ? "closer" : ""}>
+                <span>UNIT {unit.id}</span>
+                <strong>
+                  {unit.anchor_rssi ?? "—"}
+                  <small> dBm</small>
+                </strong>
+                {unit.closer_to_anchor === true && <small className="closer-label">CLOSER TO ANCHOR</small>}
+              </div>
+            ))}
+          </div>
+          <small className="position-note">
+            Relative signal strength only, not a distance in meters -- no path-loss calibration
+            exists yet
+          </small>
         </article>
       </section>
 

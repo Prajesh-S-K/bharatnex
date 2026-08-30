@@ -46,3 +46,20 @@ class ResolveRequest(BaseModel):
 
 class AcknowledgeRequest(BaseModel):
     actor: str = Field(default="OPERATOR", min_length=2, max_length=60)
+
+
+class UnitProximityRequest(BaseModel):
+    """BLE-anchor relative signal strength (Part B) -- typical BLE RSSI range in
+    dBm. Not a distance in meters; no path-loss calibration exists for that."""
+
+    rssi: int = Field(ge=-100, le=0)
+
+
+class DeviceHealthRequest(BaseModel):
+    """ESP32-S3 device-health telemetry (Part A). chip_temp_warning is a safety
+    margin against the sourced absolute-max rating, not an ambient-temperature
+    claim -- see intelligence/config.py-adjacent docs in the research vault's
+    Sourced Parameter Register (VAL-MCU-004 vs VAL-MCU-006)."""
+
+    chip_temp_c: float
+    chip_temp_warning: bool
