@@ -1,6 +1,10 @@
 """In-process WebSocket fan-out with polling retained as a fallback."""
 
+import logging
+
 from fastapi import WebSocket, WebSocketDisconnect
+
+logger = logging.getLogger(__name__)
 
 
 class EventHub:
@@ -10,10 +14,12 @@ class EventHub:
     async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self.connections.append(websocket)
+        logger.info("websocket connected total=%d", len(self.connections))
 
     def disconnect(self, websocket: WebSocket) -> None:
         if websocket in self.connections:
             self.connections.remove(websocket)
+            logger.info("websocket disconnected total=%d", len(self.connections))
 
     async def publish(self, event_type: str, payload: dict) -> None:
         # A genuinely dropped connection (phone loses Wi-Fi, tab closed) surfaces as

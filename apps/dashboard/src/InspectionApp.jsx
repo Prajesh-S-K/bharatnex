@@ -3,6 +3,11 @@ import { AlertOctagon, ArrowRight, Camera, Check, ChevronLeft, CircleDot, CloudO
 
 const API = "/api/v1";
 const UNITS = { ALPHA: { device: "OnePlus Nord CE5", start: [12, 82] }, BRAVO: { device: "Moto G86 Power 5G", start: [88, 18] } };
+// BLE-anchor relative proximity (Part B) -- must match tools/ble_anchor.py exactly.
+// Manufacturer ID 0xFFFF is the Bluetooth SIG's reserved "for testing" value.
+const ANCHOR_MANUFACTURER_ID = 0xffff;
+const ANCHOR_SIGNATURE = "GSAX";
+const PROXIMITY_REPORT_INTERVAL_MS = 30000;
 const FLOW = ["DISPATCHED", "ACCEPTED", "EN_ROUTE", "ON_SITE", "INSPECTION_STARTED", "COMPLETED"];
 const ACTIONS = { DISPATCHED: ["ACCEPTED", "REJECTED"], ACCEPTED: ["EN_ROUTE"], EN_ROUTE: ["ON_SITE"], ON_SITE: ["INSPECTION_STARTED"], INSPECTION_STARTED: ["COMPLETED"] };
 const ACTION_LABEL = { ACCEPTED: "Accept assignment", EN_ROUTE: "Start route", ON_SITE: "Confirm on site", INSPECTION_STARTED: "Begin inspection", COMPLETED: "Submit inspection", REJECTED: "Reject" };
@@ -30,6 +35,27 @@ function RouteMap({ unit, node, status }) {
 
 function InspectionApp() {
   const [identity, setIdentity] = useState(()=>load("inspection_identity")); const [assignment, setAssignment] = useState(()=>load("cached_assignment")); const [online, setOnline] = useState(navigator.onLine); const [live, setLive] = useState(false); const [syncing, setSyncing] = useState(false); const [error, setError] = useState(""); const [rejecting, setRejecting] = useState(false); const [reason, setReason] = useState(""); const [notes, setNotes] = useState(""); const [severity, setSeverity] = useState("MODERATE"); const [checklist, setChecklist] = useState({}); const [photos, setPhotos] = useState([]);
+  const [proximityStatus, setProximityStatus] = useState("idle"); // idle | scanning | unsupported | error
+  const startProximityScan = useCallback(async () => {
+    if (!("bluetooth" in navigator) || !navigator.bluetooth.requestLEScan) { setProximityStatus("unsupported"); return; }
+    let lastSentAt = 0;
+    const onAdvertisement = (event) => {
+      const data = event.manufacturerData.get(ANCHOR_MANUFACTURER_ID);
+      if (!data) return;
+      if (new TextDecoder().decode(new Uint8Array(data.buffer)) !== ANCHOR_SIGNATURE) return;
+      const now = Date.now();
+      if (now - lastSentAt < PROXIMITY_REPORT_INTERVAL_MS) return;
+      lastSentAt = now;
+      request(`/units/${identity.unit}/proximity`, { method: "POST", token: identity.token, body: { rssi: Math.round(event.rssi) } }).catch(() => {});
+    };
+    try {
+      await navigator.bluetooth.requestLEScan({ acceptAllAdvertisements: true });
+      navigator.bluetooth.addEventListener("advertisementreceived", onAdvertisement);
+      setProximityStatus("scanning");
+    } catch {
+      setProximityStatus("error");
+    }
+  }, [identity]);
   const refresh = useCallback(async()=>{ if(!identity) return; try { const data=await request(`/units/${identity.unit}/assignment`); setAssignment(data.assignment); save("cached_assignment",data.assignment); setOnline(true); } catch { setOnline(false); } },[identity]);
   const flushQueue = useCallback(async()=>{ if(!identity||!navigator.onLine) return; const queue=load("inspection_queue",[]); if(!queue.length) return; setSyncing(true); const remaining=[]; for(const item of queue){ try{await request(item.path,{method:"POST",token:identity.token,body:item.body});}catch{remaining.push(item);} } save("inspection_queue",remaining); setSyncing(false); refresh(); },[identity,refresh]);
   useEffect(()=>{ const up=()=>{setOnline(true);flushQueue();}; const down=()=>setOnline(false); window.addEventListener("online",up);window.addEventListener("offline",down);return()=>{window.removeEventListener("online",up);window.removeEventListener("offline",down);};},[flushQueue]);
@@ -40,7 +66,7 @@ function InspectionApp() {
   const logout=()=>{localStorage.removeItem("inspection_identity");setIdentity(null);setAssignment(null);};
   const photo=event=>{const file=event.target.files?.[0];if(!file||photos.length>=3)return;const reader=new FileReader();reader.onload=()=>setPhotos(old=>[...old,String(reader.result)]);reader.readAsDataURL(file);};
   if(!identity)return <IdentityScreen onReady={setIdentity}/>;
-  return <main className="phone-shell"><header className="mobile-header"><div className="mobile-brand"><div className="mobile-logo small"><HardHat size={20}/></div><div><strong>GEO-SENTRY</strong><span>INSPECTION UNIT {identity.unit}</span></div></div><div className="connection"><span className={online?"connected":"disconnected"}>{online?<Signal size={14}/>:<WifiOff size={14}/>} {online?(live?"LIVE":"POLLING"):"OFFLINE"}</span><button onClick={logout} aria-label="Change unit"><LogOut size={17}/></button></div></header>
+  return <main className="phone-shell"><header className="mobile-header"><div className="mobile-brand"><div className="mobile-logo small"><HardHat size={20}/></div><div><strong>GEO-SENTRY</strong><span>INSPECTION UNIT {identity.unit}</span></div></div><div className="connection">{proximityStatus==="scanning"?<span className="proximity-live"><Radio size={13}/> PROXIMITY</span>:proximityStatus==="idle"?<button className="proximity-start" onClick={startProximityScan}><Radio size={13}/> Start proximity scan</button>:proximityStatus==="unsupported"?<small className="proximity-note">Proximity scan unsupported on this browser</small>:<small className="proximity-note">Proximity scan unavailable</small>}<span className={online?"connected":"disconnected"}>{online?<Signal size={14}/>:<WifiOff size={14}/>} {online?(live?"LIVE":"POLLING"):"OFFLINE"}</span><button onClick={logout} aria-label="Change unit"><LogOut size={17}/></button></div></header>
     {!assignment?<section className="standby"><div className="radar"><Radio size={36}/><i></i></div><span>UNIT {identity.unit} • AVAILABLE</span><h1>Awaiting assignment</h1><p>The command centre will dispatch this unit when an inspection is required.</p><button onClick={refresh}><RefreshCw size={16}/> Check now</button>{syncing&&<small>Synchronizing queued updates…</small>}</section>:
     <><section className={`assignment-hero ${assignment.state?.toLowerCase()}`}><div className="incident-row"><span>INC-{String(assignment.id).padStart(3,"0")}</span><strong>{assignment.state}</strong></div><h1>Inspection assigned</h1><p>{assignment.zone} • {assignment.node_id?.replace("_"," ")}</p><div className="metrics"><div><span>RISK</span><strong>{Math.round(decision?.risk||0)}</strong></div><div><span>CONFIDENCE</span><strong>{Math.round(decision?.confidence||0)}%</strong></div><div><span>TREND</span><strong>{decision?.trend?.replaceAll("_"," ")||"—"}</strong></div></div></section>
     <section className="phone-content"><RouteMap unit={identity.unit} node={assignment.node_id} status={currentStatus}/><div className="progress"><div className="progress-head"><span>MISSION PROGRESS</span><strong>{currentStatus.replaceAll("_"," ")}</strong></div><div className="progress-line">{FLOW.map((item,index)=><i className={index<=step?"done":""} key={item}></i>)}</div></div>
