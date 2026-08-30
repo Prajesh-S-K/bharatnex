@@ -24,6 +24,25 @@ SMART_MINE_GATEWAY_KEY=<your-local-gateway-key>
 
 Keep these values in the local environment; never commit them.
 
+## BLE-anchor proximity scan (Part B)
+
+Requires a separate second laptop running `tools/ble_anchor.py` (its own
+Bluetooth adapter must support advertising — this repo's own dev machine
+doesn't; test with `ble_advertise_test.py` first if unsure) and a one-time
+Chrome flag on each phone:
+
+1. On each phone, open `chrome://flags/#enable-experimental-web-platform-features`
+   and set it to **Enabled**, then restart Chrome. Re-check this before a demo —
+   it can reset on a Chrome update.
+2. Start `tools/ble_anchor.py` on the second laptop and confirm it prints
+   `STARTED`, not `ABORTED`.
+3. Open the Inspection PWA on each phone as usual, tap **Start proximity scan**
+   in the header.
+4. The Field Proximity panel on the dashboard should show real RSSI values for
+   both units within 30 seconds, updating as the phones move relative to the
+   anchor. This is relative signal strength only, never a distance in meters —
+   no path-loss calibration exists for that.
+
 ## Offline behaviour
 
 The PWA caches its shell and the current assignment. If Wi-Fi drops, it displays OFFLINE,
