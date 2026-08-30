@@ -235,3 +235,30 @@ RISK_SCALE_ANCHORS: MappingProxyType[str, float] = MappingProxyType(
         "cap": 100.0,
     }
 )
+
+
+# ---------------------------------------------------------------------------
+# Confidence evidence-gap penalty (I-04).
+#
+# Confidence is built primarily from the three health flags (PROTOTYPE_CONFIDENCE_
+# WEIGHTS above). This penalty is the second Confidence input the checkpoint calls
+# for: "missing/delayed evidence". A caller (a future temporal/orchestration module)
+# marks a reading as stale/gapped; this many points are deducted, floored at 0. Not
+# derived from Risk in any way -- Confidence must never be derived from Risk.
+# ---------------------------------------------------------------------------
+
+
+class StaleEvidencePenalty(NamedTuple):
+    """Points deducted from Confidence when a reading is flagged as stale/delayed.
+
+    NOT a validated weighting -- see `status`.
+    """
+
+    points: float
+    status: str = PROTOTYPE_STATUS
+
+
+#: Round number: roughly one health flag's worth of weight (100/3 ~= 33), chosen so a
+#: single stale reading meaningfully lowers Confidence without being able to swing an
+#: otherwise fully-healthy reading below the halfway point on its own.
+PROTOTYPE_STALE_EVIDENCE_PENALTY = StaleEvidencePenalty(points=30.0)
