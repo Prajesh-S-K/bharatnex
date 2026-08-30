@@ -5,6 +5,7 @@ import "./styles.css";
 import App from "./App";
 import InspectionApp from "./InspectionApp";
 import "./inspection.css";
+import "./operator.css";
 
 const rootElement = window.location.pathname.startsWith("/inspection") ? <InspectionApp /> : <App />;
 

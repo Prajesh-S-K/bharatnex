@@ -510,3 +510,67 @@ Remaining boundary:
 - The next uncommitted layer adds the installable Android PWA. A real browser workflow verified
   automatic Critical dispatch to Alpha, every lifecycle transition, findings submission and
   return to AVAILABLE. Continue by committing the PWA, then add operator/demo integration.
+
+
+### 2026-08-30 — Full Stack prototype completion checkpoint
+
+Checkpoint status:
+
+- Backend inspection workflow committed at `aa779b5`.
+- Mobile inspection PWA committed at `9a60a54`.
+- Operator/demo/integration checkpoint implemented and browser-verified.
+- The active branch remains `fullstack/prototype-command-center`.
+- The branch is currently two committed checkpoints ahead of its remote before the final
+  operator/demo checkpoint is committed.
+
+Checkpoint 3 implementation:
+
+- Added operator authentication, incident acknowledgement and controlled resolution.
+- Added automatic judge-demo sequencing across baseline, rising risk, Critical dispatch,
+  automated inspection completion and final completion state.
+- Added the Node Offline demo scenario.
+- Added CSV reading export and printable incident reporting.
+- Added gateway authentication and command acknowledgement support.
+- Added prototype configuration and reporting-interval support.
+- Added cross-platform prototype launch/support tooling.
+- Added phone setup and integration documentation.
+- Added operator-specific dashboard styling and controls.
+- Preserved Risk and Confidence as separate values and kept the deterministic fallback
+  intelligence isolated from the final Intelligence workstream.
+- Gateway and simulator integration continue to use the frozen v1 sensor contract.
+
+Final browser verification:
+
+- Judge Demo successfully progressed through:
+  BASELINE → RISING RISK → CRITICAL + DISPATCH → INSPECTION DEMO → COMPLETE.
+- Critical Node A/B data rendered correctly with separate Risk and Confidence.
+- Automated inspection completion was verified through the backend.
+- Alpha/Bravo inspection workflow returned to the expected completed/available state.
+- Mine Panel Overview now renders the Leaflet local-XY mine geometry and sensor nodes.
+- The Leaflet map fix uses explicit local 0–100 bounds, `fitBounds()` and size
+  invalidation rather than an external tile/GNSS map.
+- No underground GNSS capability is claimed.
+- No blocking browser issue remains in the tested demo path.
+
+Final verification before checkpoint commit:
+
+- Python test suite: 13 passed.
+- Ruff lint: passed.
+- Ruff format check: passed.
+- Contract validation: passed.
+- `git diff --check`: passed.
+- Frontend ESLint: passed.
+- Vite production build: passed.
+- npm audit: 0 vulnerabilities.
+- `scripts/prototype_tools.py check`: passed.
+- Vite reports a non-blocking bundle-size warning above 500 kB; optimization is deferred
+  because it does not block the prototype.
+
+Next exact action:
+
+1. Commit the completed operator/demo/integration checkpoint.
+2. Push `fullstack/prototype-command-center`.
+3. Review the complete branch diff and pull request before merging into `main`.
+4. Do not replace the temporary deterministic decision adapter until Jhasmitha's
+   contract-compatible Intelligence implementation is reviewed and ready.
+5. Hardware/simulator producers must continue sending the unchanged frozen v1 packet.
