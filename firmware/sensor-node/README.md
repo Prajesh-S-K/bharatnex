@@ -1,78 +1,85 @@
 # ESP32 sensor-node firmware
 
-One codebase supports Node A and Node B through a compile-time `NODE_ID`
-(`src/config.h`). Reads the MPU6050 (tilt + vibration) and a linear
-potentiometer (displacement proxy), reports health, and emits the frozen v1
-sensor-reading contract (`contracts/sensor-reading.schema.json`) directly to
-the FastAPI backend over WiFi.
-
-> **Status: written, not run.** This firmware has been reviewed against the
-> frozen contract but never flashed to or tested on physical hardware --
-> none exists in this environment. See `PINOUT.md` for exactly which parts
-> of the wiring are a sourced fact versus a labeled design assumption, and
-> `../../docs/INDUSTRIAL_ROADMAP.md` for this module's tracked status.
+**Status: real, tested, working hardware.** `NodeA.ino` and `NodeB.ino` are the
+team's own firmware, confirmed running on physical boards. They do **not** talk to
+the FastAPI backend directly — each connects to the ESP32-S3 gateway's own WiFi
+network (`SMART_MINE_GATEWAY`) and POSTs its readings to `http://192.168.4.1/data`.
+The gateway (`../gateway/`) is what actually reaches the backend — see its README
+for the integration piece that was added on top of this tested node code.
 
 ## Hardware
 
-- ESP32 DevKit V1 (ESP32-WROOM-32)
-- MPU6050 (GY-521 breakout)
-- One linear potentiometer (10kΩ, per `docs/RECOVERY_BACKUP.md`'s frozen prototype spec)
-- 3 status LEDs (green/yellow/red) + current-limiting resistors
+- ESP32 DevKit V1 (per-node board)
+- MPU6050 (GY-521 breakout), I2C on GPIO21 (SDA) / GPIO22 (SCL), address `0x68`
+- One linear potentiometer on GPIO34 (ADC)
+- 3 status LEDs: blue/yellow/red on GPIO25/26/27
 
-Wiring: see `PINOUT.md`.
+Wiring: see `PINOUT.md` — confirmed working, not a design assumption anymore.
 
-## Build and flash (PlatformIO)
+## What each node actually does
 
-1. Install [PlatformIO](https://platformio.org/) (VS Code extension or CLI).
-2. `cp src/secrets.h.example src/secrets.h` and fill in your WiFi SSID/password
-   and the laptop's `API_BASE_URL` (e.g. `http://192.168.1.50:8000`) — this
-   file is gitignored, never commit it.
-3. Set `NODE_ID` in `src/config.h` to `"NODE_A"` or `"NODE_B"` for this
-   specific board.
-4. Connect the board over USB, then:
-   ```bash
-   pio run --target upload
-   pio device monitor
-   ```
-5. The serial monitor prints `POST /api/v1/readings -> <status>` each
-   reporting cycle (`REPORT_INTERVAL_MS` in `config.h`, default 2000ms) once
-   WiFi connects and the clock syncs via NTP.
+- Reads tilt (one combined tilt-from-vertical angle, not separate X/Y axes) and
+  vibration (magnitude deviation from the previous reading) from the MPU6050.
+- Reads displacement from the potentiometer, mapped to 0–100.
+- Runs its own simple local NORMAL/WARNING/CRITICAL threshold check purely to
+  drive its own LEDs — this is a local visual aid only. **It is not the system's
+  safety decision** — the backend's real Risk/Confidence/trend pipeline
+  (`intelligence/`) makes that determination independently once the gateway
+  forwards the reading; the two can legitimately disagree in the short term
+  (e.g. hysteresis keeping the backend at a prior CRITICAL state a moment
+  longer than a node's own instantaneous local read).
+- POSTs its own field names/shape (`node_id`, `tilt_change`, `vibration`,
+  `pot_raw`, `displacement`, `state`, and — `NodeB.ino` only — `mpu_health`) to
+  the gateway. These are **not** the frozen `contracts/sensor-reading.schema.json`
+  shape; the gateway converts them (see `../gateway/README.md`).
 
-## Build and flash (Arduino IDE, alternative)
+## Build and flash (Arduino IDE)
 
-1. Install the `esp32` board package (Espressif) via Boards Manager.
-2. Open `src/main.cpp` in a sketch folder named `main` (Arduino IDE expects
-   the `.ino`/main file to match its containing folder name — rename the
-   folder or copy the files accordingly).
-3. Same `secrets.h` and `config.h` setup as above.
+1. Install the `esp32` board package (Espressif) via Boards Manager, if not
+   already installed.
+2. Open `NodeA/NodeA.ino` (or `NodeB/NodeB.ino`) directly — each is already a
+   proper Arduino sketch folder (folder name matches the `.ino` file name), no
+   renaming needed.
+3. WiFi credentials (`SMART_MINE_GATEWAY` / `mine12345`) are hardcoded in the
+   file already — this is the gateway's own fixed AP, unrelated to whatever
+   real network the gateway also joins to reach the backend. Nothing to
+   configure here unless you change the gateway's AP credentials too.
 4. Select "ESP32 Dev Module" as the board, select the correct COM port, upload.
+5. Open the Serial Monitor at 115200 baud. On boot it calibrates (keep the node
+   still for ~3 seconds), then prints `NODE A CONNECTED TO S3` /
+   `NODE A WIFI CONNECTION FAILED` — confirm this before expecting any data to
+   reach the backend.
 
-## Verify against the backend
+## Verifying data reaches the backend
 
-Once flashed and reporting, confirm on the laptop:
+This node firmware only talks to the gateway, not the backend directly — verify
+at the gateway level (its Serial Monitor prints `NODE_A -> backend: 201` per
+reading) and then on the laptop:
 
 ```bash
-curl http://<laptop-ip>:8000/api/v1/readings
+curl http://localhost:8000/api/v1/readings?node_id=NODE_A
 ```
 
-should show this node's readings appearing with increasing `sequence` values.
-The dashboard (`http://<laptop-ip>:5173`) should show the node's Risk/Confidence
-update in real time — this is the same ingestion path the software simulator
-already exercises (`apps/api/routes.py`'s `SCENARIOS`), so no backend changes
-are needed for a real node to work once physically wired.
+The exact packet shape the gateway constructs from this node's readings was
+verified directly against the running backend (see
+`../../docs/INDUSTRIAL_ROADMAP.md`) — a real `POST /api/v1/readings` with the
+converted fields returns `201` and a real computed decision, before any hardware
+round-trip was attempted.
 
 ## Known limitations (documented, not hidden)
 
-- `displacement_mm` uses an assumed 0–50mm potentiometer travel range with no
-  real calibration curve (see `PINOUT.md`) — Module 1 (Physical Sensing) work.
-- `vibration_g` is a simple magnitude-deviation-from-1g heuristic, not
-  validated signal processing (`docs/research/vault/10 VIBRATION AND SEISMIC
-  SENSORS/Vibration Signal Processing.md` describes what real processing
-  would need).
-- `sequence` resets to 0 on every reboot (in-memory only) — the backend
-  already handles this correctly (a lower sequence than previously seen is
-  rejected as stale, not silently accepted; see
-  `tests/test_storage_sequence_ordering.py`), but a reboot means a gap in
-  this node's accepted sequence range, not data loss.
-- Timestamp requires NTP (internet access on the local network at boot). An
-  offline deployment needs a different clock source — not implemented here.
+- Only one combined tilt-from-vertical angle is measured, not independent X/Y
+  axis tilts — see `../gateway/README.md`'s field-mapping table for how this is
+  handled at conversion time.
+- `displacement` is a raw 0–100 mapping of the potentiometer's ADC range, with
+  no real calibration curve — same open item as before, now converted to mm at
+  the gateway using the same assumed 50mm travel.
+- `NodeA.ino` does not send `mpu_health` (only `NodeB.ino` does) — the gateway
+  defaults `mpu6050_ok=true` for NODE_A when the field is absent, rather than
+  guessing a failure. Adding the same field to `NodeA.ino` would close this gap
+  if wanted later.
+- Each node's own NORMAL/WARNING/CRITICAL/LED logic uses its own fixed
+  thresholds, independent of `intelligence/config.py`'s centrally documented
+  (and equally synthetic/unvalidated) thresholds — the two are not the same
+  numbers and were never meant to be reconciled; only the backend's decision is
+  the system's official one.

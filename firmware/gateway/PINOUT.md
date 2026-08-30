@@ -1,8 +1,8 @@
 # Gateway pinout — ESP32-S3 DevKit
 
-> **DESIGN ASSUMPTION — not yet physically validated.** Same status as
-> `../sensor-node/PINOUT.md`: no gateway hardware exists, nothing here has been
-> built or tested.
+> **CONFIRMED WORKING** for the buzzer pin (from the team's own tested `s3.txt`).
+> The board itself and its exact silkscreen/onboard-LED pin were not independently
+> re-verified here — confirm against your specific ESP32-S3 board if that varies.
 
 ## Board
 
@@ -13,18 +13,21 @@ prototype spec ("1 × ESP32-S3 development board").
 
 | Signal | GPIO |
 |---|---|
-| Buzzer (active, via NPN transistor or MOSFET driver — do not drive a buzzer directly off a GPIO beyond its rated current) | GPIO4 |
+| Buzzer | GPIO8 |
 
-## Status LED (gateway health)
+## Network — two separate WiFi roles (AP + STA)
 
-| Signal | GPIO |
-|---|---|
-| Heartbeat LED | GPIO2 (the ESP32-S3 DevKit's onboard LED on most common boards — confirm against your specific board's silkscreen, this varies by vendor) |
+- **AP (unchanged, tested):** the gateway hosts its own fixed network,
+  `SMART_MINE_GATEWAY` / `mine12345`, at its default AP IP `192.168.4.1`. Both
+  `NodeA.ino` and `NodeB.ino` join this network and POST to
+  `http://192.168.4.1/data` — this part requires no configuration and was
+  already working before the backend-integration piece was added.
+- **STA (new):** the gateway *also* joins the real room/lab WiFi network as a
+  station, so it can reach the laptop running the FastAPI backend. This is
+  configured in `Gateway/secrets.h` (copy from `secrets.h.example`) — see
+  `README.md`.
 
-## Network
-
-Gateway and both sensor nodes join the same local WiFi network (laptop hotspot
-or a router on the demo network) — no dedicated point-to-point radio link
-(LoRa, ESP-NOW, etc.) is used; see `../../docs/INDUSTRIAL_ROADMAP.md`'s Module 3
-entry for why WiFi was kept instead of switching to a different wireless
-technology.
+This is why the gateway needs `WiFi.mode(WIFI_AP_STA)` rather than the simpler
+`WIFI_AP` the original tested code used — running both roles at once is what
+lets the two fixed-network nodes and the real backend network coexist through
+one board.

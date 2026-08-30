@@ -16,10 +16,10 @@ Status labels below follow the vault's own convention
 | # | Module | Status | Evidence |
 |---:|---|---|---|
 | 0 | Research & Evidence Control | **IMPLEMENTED** | `docs/research/vault/` (this branch) |
-| 1 | Physical Sensing | **NOT IMPLEMENTED — hardware-blocked** | No physical ESP32/MPU6050/potentiometer units exist. The *concepts* (tilt/vibration/displacement/health) already exist as frozen contract fields, `contracts/sensor-reading.schema.json` |
-| 2 | Sensor Node & Firmware | **DESIGN ONLY — untested on hardware** | `firmware/sensor-node/src/main.cpp`, `firmware/sensor-node/PINOUT.md` (this branch). Written against the frozen packet contract; cannot be flash-tested here. Also reports device-health telemetry (`temperatureRead()`, sourced ESP32-S3 warning margin — see below) |
-| 3 | Wireless Communication | **DESIGN DECISION RECORDED** | WiFi (ESP32 direct-to-API + ESP32-S3 gateway forwarding), matching `docs/RECOVERY_BACKUP.md`'s existing architecture. The vault's own Module 3 lists LoRa only as "research later" — not adopted |
-| 4 | Gateway | **DESIGN ONLY — untested on hardware** | `firmware/gateway/src/main.cpp`, `firmware/gateway/PINOUT.md` (this branch); same device-health reporting as Module 2 |
+| 1 | Physical Sensing | **IMPLEMENTED — real hardware** | Real ESP32 + MPU6050 + potentiometer nodes (`NodeA.ino`/`NodeB.ino`), team-tested and working. Only one combined tilt-from-vertical angle is measured, not independent X/Y axes — see Module 2 |
+| 2 | Sensor Node & Firmware | **IMPLEMENTED — real, tested hardware** | `firmware/sensor-node/NodeA/NodeA.ino`, `firmware/sensor-node/NodeB/NodeB.ino` — the team's own tested firmware, unchanged. `firmware/sensor-node/PINOUT.md` upgraded from a design assumption to confirmed-working now that real hardware uses those exact pins |
+| 3 | Wireless Communication | **IMPLEMENTED — real hardware, revised topology** | WiFi, but not the originally-assumed single-network topology: the ESP32-S3 gateway hosts its **own** AP (`SMART_MINE_GATEWAY`) for the two nodes, and separately joins the real backend network as a station (`WIFI_AP_STA`) — see Module 4. The vault's own Module 3 lists LoRa only as "research later" — not adopted |
+| 4 | Gateway | **IMPLEMENTED — integration verified, hardware round-trip not yet tested** | `firmware/gateway/Gateway/Gateway.ino` — built on the team's tested AP/buzzer/webserver code, with the missing backend-forward piece added (field conversion, sequencing, NTP timestamping, real `POST /api/v1/readings`). The exact constructed packet was POSTed directly to the live backend and confirmed to return `201` with a real computed decision — the AP+STA dual WiFi mode itself has not been run on the physical board yet |
 | 5 | Backend & Data Validation | **IMPLEMENTED** | `apps/api/routes.py`, `apps/api/main.py`; hardened this branch with structured logging, a real `/health` DB check, per-node rate limiting, and new `POST /api/v1/devices/{id}/health` + `GET /api/v1/devices` for device-health telemetry |
 | 6 | Database & Evidence Storage | **IMPLEMENTED** | `apps/api/storage.py` — `readings`, `incidents`, `units`, `inspection_updates`, `audit_events` tables, restart-persistence tested |
 | 7 | Deterministic Intelligence | **IMPLEMENTED** | `intelligence/` (I-02–I-09) wired via `apps/api/decision.py` — feature extraction, Risk, Confidence, trend, correlation, hysteresis state machine, all with `PROTOTYPE_STATUS`-labeled thresholds. Algorithm/config version now exposed via `GET /api/v1/configuration` (this branch) |
@@ -60,15 +60,26 @@ it is the register's own conclusion.
 | Real hardware, field calibration, DGMS-specific thresholds | Modules 1, 17, 19 above — physically impossible without actual sensors and licensed field access |
 | Redundant edge servers, load/soak testing, dependency security-scan CI | Production-operations concerns, not applicable to a laptop demo |
 
-## Firmware run instructions (Modules 2 and 4)
+## Firmware run instructions (Modules 2 and 4) — updated, real hardware now exists
 
-See `firmware/sensor-node/README.md` and `firmware/gateway/README.md` — both are
-written, buildable-in-principle instructions (PlatformIO/Arduino IDE, library
-dependencies, WiFi/API configuration) that this environment cannot execute because no
-physical ESP32/MPU6050/potentiometer hardware exists to flash. The simulator
-(`apps/api/routes.py`'s `SCENARIOS`) remains the working, permanent demo/test path in
-the meantime — this is the project's own documented "digital-first strategy"
-(`docs/RECOVERY_BACKUP.md`), not a gap introduced by this branch.
+`NodeA.ino`/`NodeB.ino` are real, team-tested firmware running on physical ESP32 +
+MPU6050 + potentiometer nodes — see `firmware/sensor-node/README.md`. The gateway
+(`firmware/gateway/README.md`) builds on the team's own tested AP/buzzer code, adding
+the backend-forward integration. None of this was flashed from *this* session (no
+Bluetooth/USB/board access here, same constraint as the BLE anchor) — the constructed
+packet shape was verified directly against the live backend instead (see below), and
+the actual AP+STA dual WiFi mode + hardware round-trip is the next thing to confirm on
+the real boards. The simulator (`apps/api/routes.py`'s `SCENARIOS`) remains available
+as a fallback demo/test path regardless — the project's documented "digital-first
+strategy" (`docs/RECOVERY_BACKUP.md`).
+
+**Verified without hardware, directly against the running backend:** POSTed the exact
+JSON the new gateway firmware constructs (converted `tilt_x_deg`/`tilt_y_deg`/
+`vibration_g`/`displacement_mm`/`health` fields, per-node `sequence`) to
+`POST /api/v1/readings` and confirmed `201` with a real computed decision (Risk,
+Confidence, state, `gateway_command.buzzer`) both for a high-tilt case (→ `CRITICAL`)
+and a low-reading case. This proves the field-conversion logic is correct
+independent of whether the physical AP+STA WiFi handshake succeeds on the real board.
 
 ## ESP32-S3 device-health warnings (Part A) — status
 

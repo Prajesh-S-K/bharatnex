@@ -1,12 +1,14 @@
 # Sensor node pinout — ESP32 DevKit V1 + MPU6050 (GY-521) + linear potentiometer
 
-> **DESIGN ASSUMPTION — not yet physically validated.** Per the research vault's own
-> value-class taxonomy (`docs/research/vault/00 MASTER CONTROL/Geo-Sentry Sourced
-> Parameter Register.md`), this is a design assumption, not a sourced fact: the vault's
-> own `09 TILT SENSOR RESEARCH/MEMS Accelerometer for Tilt.md` and `08 DISPLACEMENT
-> SENSOR RESEARCH/Linear Potentiometer.md` pages are both `status: unresearched` —
-> no manufacturer datasheet or field source has been registered for either component
-> yet. The GPIO assignment below has never been built or tested on physical hardware.
+> **CONFIRMED WORKING on real hardware** — this is the exact pin assignment used by
+> the team's own tested `NodeA.ino`/`NodeB.ino` firmware. It started as a documented
+> design assumption (per the research vault's value-class taxonomy — no manufacturer
+> datasheet/field source was registered for the exact GY-521 breakout or
+> potentiometer part), and was never claimed as more certain than that until now.
+> No specific breakout part number, tolerance, potentiometer travel-range, or
+> displacement-to-voltage calibration curve is registered in the vault yet — the
+> pins themselves are confirmed; the precision of what they measure is still an
+> open item (see "What is NOT assumed here" below).
 
 ## Board
 
@@ -45,7 +47,8 @@ which is not registered in the vault yet either.
 
 ## Node identity
 
-`NODE_A` vs `NODE_B` is set at compile time (`NODE_ID` in `src/config.h`), not by a
+`NODE_A` vs `NODE_B` is set at compile time (`#define NODE_ID` in `NodeA.ino` /
+`NodeB.ino` directly — two separate sketches, not a shared config file), not by a
 GPIO strap — two physical boards, each flashed once with its own identity, matching
 the frozen contract's `node_id` enum (`contracts/sensor-reading.schema.json`).
 
