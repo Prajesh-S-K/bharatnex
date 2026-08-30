@@ -319,3 +319,35 @@ PROTOTYPE_CORRELATION_TUNING = PrototypeCorrelationTuning(
     window_seconds=30.0,
     min_trustworthy_confidence=50.0,
 )
+
+
+# ---------------------------------------------------------------------------
+# State machine hysteresis (I-07).
+#
+# State bucket boundaries are NOT redeclared here -- they reuse RISK_SCALE_ANCHORS
+# ("watch"=25, "warning"=50, "critical"=80) so there is exactly one place a reading's
+# Risk score maps to a severity tier. This section only adds the anti-flapping rule:
+# escalation (toward a more severe state) is immediate on any single reading, but
+# de-escalation (recovery) requires `deescalation_streak` consecutive, sufficiently
+# confident calmer readings before the state actually steps down.
+# ---------------------------------------------------------------------------
+
+
+class PrototypeStateTuning(NamedTuple):
+    """Tuning for the NORMAL/WATCH/WARNING/CRITICAL state machine's hysteresis.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    deescalation_streak: int
+    status: str = PROTOTYPE_STATUS
+
+
+#: deescalation_streak=3: matches the same round "three in a row" bar used for
+#: PERSISTENT_EVENT detection (I-05) -- distinct mechanism, same defensible round
+#: number, chosen only so a single calmer reading can never immediately erase a
+#: CRITICAL/WARNING state (the classic flapping failure mode at a boundary).
+#: De-escalation also requires confidence >= PROTOTYPE_CORRELATION_TUNING.
+#: min_trustworthy_confidence (reused, not redeclared) -- an untrustworthy "calm"
+#: reading must not count toward recovery.
+PROTOTYPE_STATE_TUNING = PrototypeStateTuning(deescalation_streak=3)
