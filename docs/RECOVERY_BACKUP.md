@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** phone-module completion sprint in progress on `fullstack/prototype-command-center`
+**Backup status:** Full Stack prototype complete; guarded local n8n automation operational
 
 ## Recovery instruction for a new task
 
@@ -518,6 +518,27 @@ Checkpoint status:
 
 - Backend inspection workflow committed at `aa779b5`.
 - Mobile inspection PWA committed at `9a60a54`.
+
+### 2026-08-30 — Guarded local n8n automation
+
+- Installed the local `qwen2.5-coder:7b` Ollama model for bounded offline summaries.
+- Recovered Docker Desktop from a stuck backend and verified engine version 29.7.2.
+- The registry's `latest` n8n image contained an empty entrypoint; replaced it with pinned
+  stable n8n `2.32.7` and verified `/healthz`.
+- Added `automation/` with a localhost-only Docker Compose service, persistent n8n data,
+  an allowlisted read-only runner and three importable workflows.
+- The runner accepts only the fixed `quality-gate` operation and exposes no arbitrary command
+  or file-write interface.
+- Imported the runner token into n8n's encrypted HTTP Header credential store; global workflow
+  access to container environment variables remains blocked.
+- Verified n8n → runner end to end: 13 Python tests, Ruff lint/format, contract validation,
+  whitespace, frontend lint/build and Git diff all passed.
+- Verified n8n → Ollama end to end using the local handoff-summary workflow.
+- n8n remains limited to reporting and summarization. Autonomous writes, commits, pushes,
+  merges, contract changes and safety decisions are disabled.
+- One-time local n8n owner onboarding remains a user-controlled UI step. Three earlier imported
+  draft workflows are still visible alongside the corrected copies and should be removed after
+  login; no project source or n8n credential is affected.
 - Operator/demo/integration checkpoint implemented and browser-verified.
 - The active branch remains `fullstack/prototype-command-center`.
 - The branch is currently two committed checkpoints ahead of its remote before the final

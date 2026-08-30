@@ -1,0 +1,46 @@
+{
+  "name": "SMART-MINE Prototype Health",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Run Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:8000/health",
+        "options": {"timeout": 10000}
+      },
+      "id": "api-health",
+      "name": "Check API Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:8000/api/v1/overview",
+        "options": {"timeout": 10000}
+      },
+      "id": "prototype-overview",
+      "name": "Read Prototype Overview",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Run Manually": {
+      "main": [[{"node": "Check API Health", "type": "main", "index": 0}]]
+    },
+    "Check API Health": {
+      "main": [[{"node": "Read Prototype Overview", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"},
+  "active": false,
+  "versionId": "6dd1536b-ddaa-4862-93d4-bf9690275faa"
+}

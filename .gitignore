@@ -31,6 +31,9 @@ coverage/
 intelligence/models/*.joblib
 intelligence/models/*.pkl
 logs/
+automation/.env
+automation/*.log
+automation/*.pid
 
 # Embedded builds
 .pio/

@@ -1,0 +1,43 @@
+{
+  "name": "SMART-MINE Repository Quality Gate",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Run Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8010/v1/quality-gate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "quality-gate",
+      "name": "Run Allowlisted Checks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bharatnex-runner-auth",
+          "name": "SMART-MINE Runner Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Run Manually": {
+      "main": [[{"node": "Run Allowlisted Checks", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"},
+  "active": false,
+  "versionId": "8af835e5-6715-4e2b-ab5e-114740b9455b"
+}
