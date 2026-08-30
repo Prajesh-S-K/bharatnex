@@ -17,14 +17,14 @@ Status labels below follow the vault's own convention
 |---:|---|---|---|
 | 0 | Research & Evidence Control | **IMPLEMENTED** | `docs/research/vault/` (this branch) |
 | 1 | Physical Sensing | **NOT IMPLEMENTED — hardware-blocked** | No physical ESP32/MPU6050/potentiometer units exist. The *concepts* (tilt/vibration/displacement/health) already exist as frozen contract fields, `contracts/sensor-reading.schema.json` |
-| 2 | Sensor Node & Firmware | **DESIGN ONLY — untested on hardware** | `firmware/sensor-node/src/main.cpp`, `firmware/sensor-node/PINOUT.md` (this branch). Written against the frozen packet contract; cannot be flash-tested here |
+| 2 | Sensor Node & Firmware | **DESIGN ONLY — untested on hardware** | `firmware/sensor-node/src/main.cpp`, `firmware/sensor-node/PINOUT.md` (this branch). Written against the frozen packet contract; cannot be flash-tested here. Also reports device-health telemetry (`temperatureRead()`, sourced ESP32-S3 warning margin — see below) |
 | 3 | Wireless Communication | **DESIGN DECISION RECORDED** | WiFi (ESP32 direct-to-API + ESP32-S3 gateway forwarding), matching `docs/RECOVERY_BACKUP.md`'s existing architecture. The vault's own Module 3 lists LoRa only as "research later" — not adopted |
-| 4 | Gateway | **DESIGN ONLY — untested on hardware** | `firmware/gateway/src/main.cpp`, `firmware/gateway/PINOUT.md` (this branch) |
-| 5 | Backend & Data Validation | **IMPLEMENTED** | `apps/api/routes.py`, `apps/api/main.py`; hardened this branch with structured logging, a real `/health` DB check, and per-node rate limiting |
+| 4 | Gateway | **DESIGN ONLY — untested on hardware** | `firmware/gateway/src/main.cpp`, `firmware/gateway/PINOUT.md` (this branch); same device-health reporting as Module 2 |
+| 5 | Backend & Data Validation | **IMPLEMENTED** | `apps/api/routes.py`, `apps/api/main.py`; hardened this branch with structured logging, a real `/health` DB check, per-node rate limiting, and new `POST /api/v1/devices/{id}/health` + `GET /api/v1/devices` for device-health telemetry |
 | 6 | Database & Evidence Storage | **IMPLEMENTED** | `apps/api/storage.py` — `readings`, `incidents`, `units`, `inspection_updates`, `audit_events` tables, restart-persistence tested |
 | 7 | Deterministic Intelligence | **IMPLEMENTED** | `intelligence/` (I-02–I-09) wired via `apps/api/decision.py` — feature extraction, Risk, Confidence, trend, correlation, hysteresis state machine, all with `PROTOTYPE_STATUS`-labeled thresholds. Algorithm/config version now exposed via `GET /api/v1/configuration` (this branch) |
 | 8 | Realtime Dashboard | **IMPLEMENTED** | `apps/dashboard/` — React/Vite/Leaflet/Recharts, WebSocket + polling fallback |
-| 9 | Mobile / Field Interface | **IMPLEMENTED** | Inspection PWA (`apps/dashboard/src`, `docs/PHONE_SETUP.md`) — installable, offline shell, role-based |
+| 9 | Mobile / Field Interface | **IMPLEMENTED** | Inspection PWA (`apps/dashboard/src`, `docs/PHONE_SETUP.md`) — installable, offline shell, role-based. Now also reports BLE-anchor relative proximity (`navigator.bluetooth.requestLEScan()`, real hardware, requires the Chrome experimental-features flag and a working anchor — see below); phone-to-phone real GPS was evaluated and rejected (indoor accuracy too poor for a one-room demo) |
 | 10 | ML Evidence | **IMPLEMENTED — synthetic training data** | `intelligence/anomaly.py` (I-09), Isolation Forest, held-out calibration split. Trained on a synthetic baseline, not field data — `anomaly_model_trained` now exposed via `/configuration` (this branch) |
 | 11 | Agentic AI | **NOT IMPLEMENTED — explicitly deferred** | Requires a local LLM runtime decision, tool-calling infra, none of which exists here. `intelligence/explanation.py` (I-10) already satisfies the vault's core safety rule for this layer — "LLM explains, never decides," deterministic fallback on any failure — without a new agent framework |
 | 12 | Local RAG & Citations | **NOT IMPLEMENTED — explicitly deferred** | No indexed document corpus or local LLM runtime available |
@@ -69,3 +69,39 @@ physical ESP32/MPU6050/potentiometer hardware exists to flash. The simulator
 (`apps/api/routes.py`'s `SCENARIOS`) remains the working, permanent demo/test path in
 the meantime — this is the project's own documented "digital-first strategy"
 (`docs/RECOVERY_BACKUP.md`), not a gap introduced by this branch.
+
+## ESP32-S3 device-health warnings (Part A) — status
+
+**Fully implemented and live-verified** (posted synthetic values directly to
+`POST /api/v1/devices/{id}/health` and confirmed the dashboard's Device Health tile
+renders correctly, including the warning badge). The firmware side
+(`temperatureRead()` calling the real internal die-temperature sensor) is written and
+reviewed but, like the rest of Modules 2/4, cannot be flash-tested without physical
+hardware. Warning threshold is a safety margin against the sourced absolute-max
+rating (VAL-MCU-005), never framed as an ambient-temperature measurement — see
+`docs/research/vault/00 MASTER CONTROL/Geo-Sentry Sourced Parameter Register.md`.
+
+## BLE-anchor phone proximity (Part B) — status
+
+Backend and dashboard: **fully implemented and live-verified** (posted synthetic RSSI
+for both units directly and confirmed the Field Proximity panel's closer-to-anchor
+comparison, including its correct expiry after the 35-second freshness window).
+
+What this session verified with real hardware, not just code:
+
+- This dev machine's own Bluetooth adapter **cannot** advertise as a BLE peripheral
+  (`BluetoothLEAdvertisementPublisher` test → `ABORTED`, `RADIO_NOT_AVAILABLE`).
+- A second, separate Windows laptop **can** — same test script, real result:
+  `SUCCESS`.
+- `navigator.bluetooth.requestLEScan()` requires manually enabling
+  `chrome://flags/#enable-experimental-web-platform-features` in Chrome on each phone.
+
+What still needs checking on the real hardware before a demo (this session cannot do
+this itself — no Bluetooth or second-laptop access here):
+
+1. Run `tools/ble_anchor.py` on the second (verified-working) laptop, confirm it
+   prints `STARTED`, not `ABORTED`.
+2. On both phones, confirm the Chrome flag above is still enabled (it can reset on a
+   Chrome update).
+3. Open the Inspection PWA as ALPHA and BRAVO, tap "Start proximity scan" on each,
+   confirm real RSSI values start appearing in the Field Proximity panel within 30s.
