@@ -1,7 +1,9 @@
 """Small SQLite repository used by the laptop prototype."""
 
+import contextlib
 import json
 import sqlite3
+from collections.abc import Iterator
 from pathlib import Path
 
 
@@ -14,9 +16,22 @@ class Database:
         connection.row_factory = sqlite3.Row
         return connection
 
+    @contextlib.contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        """Open a connection that both commits/rolls back (like `with connect()`)
+        and is always closed afterward. Relying on CPython refcounting to close the
+        bare `sqlite3.connect()` result was leaving file handles open long enough to
+        fail same-process cleanup on Windows; every query path now goes through this."""
+        connection = self.connect()
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
+
     def initialize(self) -> None:
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
-        with self.connect() as connection:
+        with self._connection() as connection:
             connection.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS readings (
@@ -96,13 +111,23 @@ class Database:
                 connection.execute(f"ALTER TABLE incidents ADD COLUMN {name} {definition}")
 
     def save(self, packet: dict, decision: dict) -> tuple[int, bool]:
-        with self.connect() as connection:
+        with self._connection() as connection:
             existing = connection.execute(
                 "SELECT id FROM readings WHERE node_id = ? AND sequence = ?",
                 (packet["node_id"], packet["sequence"]),
             ).fetchone()
             if existing:
                 return int(existing["id"]), False
+            # `latest()` orders by insertion id, not by the packet's own sequence, so
+            # a late-arriving OLDER sequence must be rejected here too -- otherwise it
+            # gets inserted as a new row and is then read back as the "latest" state,
+            # silently reverting an already-escalated node back to stale sensor data.
+            newest = connection.execute(
+                "SELECT MAX(sequence) AS max_sequence FROM readings WHERE node_id = ?",
+                (packet["node_id"],),
+            ).fetchone()["max_sequence"]
+            if newest is not None and packet["sequence"] < newest:
+                return -1, False
             cursor = connection.execute(
                 "INSERT INTO readings(node_id, sequence, timestamp, packet, decision) "
                 "VALUES (?, ?, ?, ?, ?)",
@@ -123,7 +148,7 @@ class Database:
             query += " WHERE node_id = ?"
             params = (node_id,)
         query += " ORDER BY id DESC LIMIT 100"
-        with self.connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute(query, params).fetchall()
         return [self._reading(row) for row in rows]
 
@@ -136,7 +161,7 @@ class Database:
     def open_incident(self, decision: dict) -> int | None:
         if "CREATE_INCIDENT" not in decision["actions"]:
             return None
-        with self.connect() as connection:
+        with self._connection() as connection:
             row = connection.execute(
                 "SELECT id FROM incidents WHERE node_id = ? AND status != 'RESOLVED'",
                 (decision["node_id"],),
@@ -162,19 +187,19 @@ class Database:
                 return incident_id
 
     def incidents(self) -> list[dict]:
-        with self.connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute("SELECT * FROM incidents ORDER BY id DESC").fetchall()
         return [dict(row) for row in rows]
 
     def incident(self, incident_id: int) -> dict | None:
-        with self.connect() as connection:
+        with self._connection() as connection:
             row = connection.execute(
                 "SELECT * FROM incidents WHERE id = ?", (incident_id,)
             ).fetchone()
         return dict(row) if row else None
 
     def assign(self, incident_id: int, unit: str) -> dict | None:
-        with self.connect() as connection:
+        with self._connection() as connection:
             incident = connection.execute(
                 "SELECT * FROM incidents WHERE id = ?", (incident_id,)
             ).fetchone()
@@ -224,12 +249,12 @@ class Database:
         return self.assign(incident_id, unit["id"])
 
     def units(self) -> list[dict]:
-        with self.connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute("SELECT * FROM units ORDER BY id").fetchall()
         return [dict(row) for row in rows]
 
     def unit_assignment(self, unit_id: str) -> dict | None:
-        with self.connect() as connection:
+        with self._connection() as connection:
             row = connection.execute(
                 """SELECT incidents.* FROM incidents
                 JOIN units ON units.active_incident_id = incidents.id
@@ -251,7 +276,7 @@ class Database:
         status = payload["status"]
         if status not in allowed:
             raise ValueError("Unsupported inspection status")
-        with self.connect() as connection:
+        with self._connection() as connection:
             incident = connection.execute(
                 "SELECT * FROM incidents WHERE id = ?", (incident_id,)
             ).fetchone()
@@ -303,14 +328,14 @@ class Database:
         return self._inspection(row)
 
     def inspection_updates(self, incident_id: int) -> list[dict]:
-        with self.connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute(
                 "SELECT * FROM inspection_updates WHERE incident_id = ? ORDER BY id", (incident_id,)
             ).fetchall()
         return [self._inspection(row) for row in rows]
 
     def acknowledge(self, incident_id: int, actor: str) -> dict | None:
-        with self.connect() as connection:
+        with self._connection() as connection:
             now = self._now()
             connection.execute(
                 "UPDATE incidents SET acknowledged_at = ?, acknowledged_by = ? WHERE id = ?",
@@ -323,7 +348,7 @@ class Database:
         return dict(row) if row else None
 
     def resolve(self, incident_id: int, actor: str, notes: str) -> dict | None:
-        with self.connect() as connection:
+        with self._connection() as connection:
             incident = connection.execute(
                 "SELECT * FROM incidents WHERE id = ?", (incident_id,)
             ).fetchone()
@@ -350,7 +375,7 @@ class Database:
         return dict(row)
 
     def audit(self, actor: str, event_type: str, incident_id: int | None, details: dict) -> None:
-        with self.connect() as connection:
+        with self._connection() as connection:
             self._audit_with_connection(connection, actor, event_type, incident_id, details)
 
     def audit_events(self, incident_id: int | None = None) -> list[dict]:
@@ -360,12 +385,12 @@ class Database:
             query += " WHERE incident_id = ?"
             params = (incident_id,)
         query += " ORDER BY id DESC LIMIT 200"
-        with self.connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute(query, params).fetchall()
         return [{**dict(row), "details": json.loads(row["details"])} for row in rows]
 
     def reset_demo(self) -> None:
-        with self.connect() as connection:
+        with self._connection() as connection:
             connection.execute("DELETE FROM inspection_updates")
             connection.execute("DELETE FROM audit_events")
             connection.execute("DELETE FROM incidents")

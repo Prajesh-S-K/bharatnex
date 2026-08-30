@@ -192,6 +192,7 @@ function App() {
   const [selected, setSelected] = useState("NODE_A");
   const [busy, setBusy] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [live, setLive] = useState(false);
 
   const [operatorToken, setOperatorToken] = useState(
     () => localStorage.getItem("operator_token") || "",
@@ -224,8 +225,19 @@ function App() {
     refresh();
 
     const timer = setInterval(refresh, 4000);
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${protocol}://${location.host}${API}/live`);
+    ws.onopen = () => {
+      setLive(true);
+      ws.send("ready");
+    };
+    ws.onmessage = () => refresh();
+    ws.onclose = () => setLive(false);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      ws.close();
+    };
   }, [refresh]);
 
   const run = async (scenario) => {
@@ -449,7 +461,7 @@ function App() {
 
           <span className={connected ? "live" : "offline"}>
             <i />
-            {connected ? "SYSTEM LIVE" : "API OFFLINE"}
+            {connected ? (live ? "SYSTEM LIVE" : "POLLING") : "API OFFLINE"}
           </span>
 
           <span className="clock">LOCAL CONTROL • CHENNAI</span>
@@ -485,6 +497,7 @@ function App() {
 
           {[
             "normal",
+            "watch",
             "warning",
             "critical",
             "sensor_failure",

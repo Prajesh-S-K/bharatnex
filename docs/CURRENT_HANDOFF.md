@@ -4,44 +4,50 @@ For complete recovery, read [RECOVERY_BACKUP.md](RECOVERY_BACKUP.md).
 
 ## Current state
 
-- Active branch: `fullstack/prototype-command-center`.
-- Full Stack prototype is committed and pushed through `5a87afc`.
-- The guarded local n8n automation checkpoint is tracked on this branch.
-- n8n 2.32.7 is running locally at `http://127.0.0.1:5678` with persistent Docker data.
-- Ollama is running locally with `qwen2.5-coder:7b`.
-- The allowlisted runner is local-only at `127.0.0.1:8010`.
-- n8n successfully executed the Repository Quality Gate and Local Handoff Summary workflows.
-- The published Idea-to-Checkpoint form is available at
-  `http://127.0.0.1:5678/form/smart-mine-idea` for signed-in n8n users.
-- Its first documentation-only proof created isolated branch
-  `automation/20260830-033046-create-docs-automation-proof-md-with` at commit `cfe493b` and
-  stopped without push or merge.
-- The quality gate passed: 13 Python tests, Ruff lint/format, contracts, whitespace,
-  frontend lint/build and Git diff.
-- Constrained code mutation and checkpoint commits are enabled only inside isolated worktrees.
-  Push and merge remain disabled.
+- Integration branch: `fullstack/integrated-prototype`.
+- Base: `fullstack/prototype-command-center` at `5284971`.
+- Reviewed Full Stack finalization merged from `fullstack/final-software` at `ab6c010`.
+- Included hardening: stale/out-of-order sequence rejection, explicit SQLite connection
+  closure, dropped-WebSocket isolation, WATCH scenario, real dashboard WebSocket status and
+  mobile-PWA width isolation.
+- The React/FastAPI/SQLite/Leaflet/Recharts command centre and Alpha/Bravo inspection PWA are
+  the runnable prototype website.
+- The local n8n/Ollama Idea-to-Checkpoint system remains operational and its history is
+  preserved.
+- Combined verification passed: 43 Python tests, Ruff, contracts, whitespace, frontend
+  lint/build, npm audit and Git diff checks.
+- Live browser verification passed for WATCH, Critical dispatch, real WebSocket status and
+  375/390/412 px phone layouts with no console errors.
 
-## Automation files
+## Runtime
 
-- `automation/docker-compose.yml`: pinned local n8n service.
-- `automation/runner.py`: fixed-operation runner; no arbitrary shell interface.
-- `automation/start.sh`: local startup helper.
-- `automation/n8n/workflows/`: health, quality-gate and local-summary workflows.
-- `automation/coding_agent.py`: bounded Ollama planner/implementer and repair loop.
-- `automation/.env.example`: non-secret configuration template.
-- `automation/.env`: ignored local secret/configuration file.
+- Dashboard: `http://127.0.0.1:5173/`
+- Inspection PWA: `http://127.0.0.1:5173/inspection`
+- API/docs: `http://127.0.0.1:8000/` and `http://127.0.0.1:8000/docs`
+- n8n: `http://127.0.0.1:5678/`
+- Local task form: `http://127.0.0.1:5678/form/smart-mine-idea`
 
 ## Integration boundaries
 
-- Frozen v1 sensor and decision contracts remain authoritative.
-- n8n may report checks and summarize outputs; it may not calculate Risk/Confidence or make
-  safety decisions.
-- n8n has read-only repository access.
-- No workflow may merge, force-push, delete tests, modify contracts or publish secrets.
-- Jhasmitha's Intelligence branch remains independently owned and must not be overwritten.
+- Frozen v1 sensor and decision contracts remain authoritative and unchanged.
+- Hardware/simulator/gateway must send the unchanged packet.
+- Gateway does not calculate Risk or Confidence.
+- `apps/api/decision.py` remains the temporary deterministic prototype adapter until the
+  Intelligence implementation is separately reviewed and contract-compatible.
+- n8n cannot modify contracts, automation, GitHub configuration, secrets or another
+  workstream; it never pushes or merges.
+- Gas remains outside frozen v1. This is a prototype, not a certified mining safety system.
+
+## Known limitations
+
+- The mobile offline-queue flush has a theoretical network-flap double-submit race that has
+  not been reproduced.
+- WebSocket failure handling is covered by automated tests, but a physical Wi-Fi interruption
+  should still be included in the final cold-start rehearsal.
+- Vite's bundle-size warning is non-blocking and remains deferred.
 
 ## Next action
 
-1. Use the protected task form for one bounded task at a time.
-2. Review the returned worktree diff and tests before any push.
-3. Keep contracts, safety logic and cross-workstream changes under explicit human review.
+1. Push `fullstack/integrated-prototype`.
+2. Review the integration branch before merging to `main`.
+3. Connect Wokwi/ESP32 traffic using the unchanged v1 contract.

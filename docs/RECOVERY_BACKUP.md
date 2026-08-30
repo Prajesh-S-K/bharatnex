@@ -7,7 +7,7 @@ This document is the human-readable recovery source for the SMART-MINE AI / Geo-
 **Baseline commit:** `741f540` — `chore: establish SMART-MINE monorepo foundation`  
 **GitHub remote:** `https://github.com/Prajesh-S-K/bharatnex` (public)
 **Backup last updated:** 2026-08-30
-**Backup status:** Full Stack prototype complete; guarded local n8n automation operational
+**Backup status:** Full Stack finalization and guarded n8n automation integrated and verified on `fullstack/integrated-prototype`
 
 ## Recovery instruction for a new task
 
@@ -300,8 +300,8 @@ Workstreams may implement independently, but they may not invent independent int
 | 1 | Contract examples validate against schemas | **COMPLETE** — executable JSON Schema checks |
 | 2 | Simulator → FastAPI → SQLite → readable response | **COMPLETE** — integrated prototype branch |
 | 3 | Intelligence normal/warning decisions | **PARTIAL** — validated features merged; fallback adapter runs the website |
-| 4 | Automation state/actions observable | **COMPLETE FOR PROTOTYPE** — incidents and dispatch observable |
-| 5 | One-screen dashboard integration | **COMPLETE FOR PROTOTYPE** — React/Leaflet/Recharts command centre |
+| 4 | Automation state/actions observable | **COMPLETE FOR PROTOTYPE** — incidents and dispatch observable, live-verified |
+| 5 | One-screen dashboard integration | **COMPLETE FOR PROTOTYPE** — React/Leaflet/Recharts command centre, live-verified incl. mobile PWA |
 | 6 | Wokwi nodes replace simulator input | NOT STARTED |
 | 7 | Physical nodes replace Wokwi | NOT STARTED |
 | 8 | Full failure matrix and cold-start rehearsal | NOT STARTED |
@@ -615,3 +615,118 @@ Next exact action:
 4. Do not replace the temporary deterministic decision adapter until Jhasmitha's
    contract-compatible Intelligence implementation is reviewed and ready.
 5. Hardware/simulator producers must continue sending the unchanged frozen v1 packet.
+
+### 2026-08-30 — Full Stack finalization (FS-F01–FS-F08) on `fullstack/final-software`
+
+Branched from `fullstack/prototype-command-center` at `5a87afc` per the finalization
+instructions. Worked checkpoint-by-checkpoint with a live backend + dashboard + mobile
+PWA running throughout, not just static review; every fix below was reproduced with a
+failing test/live repro first, then confirmed fixed.
+
+Real defects found and repaired:
+
+- `apps/api/realtime.py`: `EventHub.publish()` only caught `RuntimeError`, but
+  Starlette's `WebSocket.send()` re-raises a genuinely dropped connection (Wi-Fi loss,
+  closed tab) as `WebSocketDisconnect`. One stale client crashed the whole broadcast
+  loop and blocked delivery to every connection after it. Reproduced with a failing
+  test, fixed by catching both exception types.
+- `apps/api/storage.py`: `Database.save()` only rejected an exact duplicate sequence.
+  A late-arriving OLDER sequence was silently inserted and then read back as the
+  node's "latest" state (`latest()` orders by insertion id, not sequence), reverting
+  an already-escalated node to stale sensor data. Now rejected with the same 409 path
+  as a duplicate. Also: connections were never explicitly closed, which failed
+  same-process file cleanup on Windows (reproduced directly); all query paths now go
+  through a context manager that always closes the connection.
+- `apps/api/routes.py` / `apps/dashboard/src/App.jsx`: the WATCH demo scenario was
+  missing, exactly as the finalization instructions flagged as a possibility. Added a
+  contract-compatible entry calibrated into the WATCH risk band and the matching
+  frontend button; verified live (state=WATCH, risk=35, confidence=88).
+- `apps/dashboard/src/styles.css`: `main.jsx` unconditionally imports both
+  `styles.css` (desktop dashboard) and `inspection.css` (mobile PWA) regardless of
+  route. `styles.css` had a bare `body{min-width:1180px}` meant only for the desktop
+  2-column layout; it leaked into the inspection PWA and broke it on every mobile
+  viewport (measured live: 1231px scrollWidth inside a 375px viewport, identity
+  screen rendered off-center). Scoped the rule with `:has(.phone-shell)` so it only
+  applies when the desktop dashboard is mounted. Verified no horizontal overflow at
+  375×812, 390×844 and 412×915, and that the desktop dashboard's own layout is
+  unchanged.
+
+Live verification performed (backend + frontend + mobile PWA running together):
+
+- Full Judge Demo: BASELINE → RISING RISK → CRITICAL + DISPATCH → INSPECTION DEMO →
+  COMPLETE, zero unexplained console errors.
+- Complete incident lifecycle via the UI: create → auto-dispatch → auto-complete →
+  acknowledge → operator sign-in → resolve, and the printable report / CSV export
+  both verified with real data.
+- Full mobile inspection lifecycle driven through the actual PWA (login → accept →
+  en route → on site → inspection started → checklist/findings → submit → unit
+  returns to AVAILABLE), confirmed in the incident's audit trail.
+- Alpha + Bravo independence verified at the API level with two separate tokens: each
+  unit sees only its own assignment, one unit's action does not affect the other's,
+  and a unit attempting to update the other's incident is correctly rejected (404).
+- Gateway authentication: missing/invalid credential → 401, valid → accepted (tested
+  with `SMART_MINE_GATEWAY_KEY` actually configured, not just the default unset path).
+- Malformed-packet handling: missing field, invalid `node_id`, missing `sensors`,
+  wrong datatype, unknown property — all return structured 422, never 500.
+- Duplicate and older-sequence packets both correctly return 409.
+- Restart/persistence: created incidents, readings and a completed inspection,
+  restarted the FastAPI process, confirmed all of it (3 incidents, 16 readings, the
+  completed inspection's notes) survived intact.
+- Reset Demo: requires operator auth (401 without it), clears to a known empty state.
+- PWA basics: manifest loads, service worker registers, icon loads, service worker
+  correctly passes `/api/` requests through uncached.
+
+Final verification:
+
+- Python test suite: 30 passed (13 pre-existing + 17 new/hardening).
+- Ruff lint/format: passed. Contract validation: passed. Whitespace check: passed.
+  `git diff --check`: passed.
+- Frontend ESLint: passed. Vite production build: passed (same pre-existing
+  non-blocking >500kB chunk warning, not addressed — correctness over bundle size
+  per the finalization instructions). npm audit: 0 vulnerabilities.
+- Credential scan (`git grep -nEi 'password|secret|api[_-]?key|token'`) manually
+  reviewed: no hardcoded secrets, no `.env` tracked.
+
+Known limitations not exercised live (reasoned from code, not defects found):
+
+- Offline action queue: `InspectionApp.jsx`'s `flushQueue()` can theoretically be
+  invoked concurrently by both the `online` event listener and the `useEffect` on
+  `[online]` change, which could in principle double-submit a queued action under a
+  network-flap race. Not reproduced; flagged for whoever owns this area next.
+- WebSocket reconnect banner and offline queueing were verified by code reading and
+  by the `EventHub` crash-survival fix/tests, not by physically toggling network
+  connectivity in the browser.
+- The `computer`-tool click action hung consistently on the `/inspection` route
+  specifically (screenshots/JS execution on that page worked fine throughout,
+  including full interaction via `element.click()` and React-safe input setters) —
+  worked around it for all mobile testing; most likely tied to the PWA's persistent
+  WebSocket connection confusing the tool's own "settled" heuristic, not a product
+  defect (the same interactions succeed instantly on the desktop dashboard route).
+
+Next exact action:
+
+1. Review branch `fullstack/final-software` (HEAD `7eaf9a9`) and its diff against
+   `fullstack/prototype-command-center`.
+2. Do not merge — wait for Prajesh's review per the finalization instructions.
+3. Decide whether to fold this branch into `fullstack/prototype-command-center` or
+   merge directly to `main`.
+
+### 2026-08-30 — Final website integration
+
+- Reviewed `origin/fullstack/final-software` at `ab6c010` and integrated its five commits into
+  `fullstack/integrated-prototype`, based on the n8n-enabled prototype at `5284971`.
+- Preserved both the Full Stack finalization record and the guarded n8n/Ollama recovery history;
+  the older branch documentation was not allowed to overwrite later automation checkpoints.
+- Integrated dropped-WebSocket isolation, stale/out-of-order sequence rejection, explicit
+  SQLite connection closure, WATCH demo state, real dashboard WebSocket status and mobile CSS
+  isolation.
+- Frozen sensor and decision contracts remained unchanged. The deterministic prototype decision
+  adapter remains in place pending separate Intelligence review.
+- Combined verification passed: 43 Python tests, Ruff lint/format, contract validation,
+  whitespace, frontend ESLint/build, npm audit with zero vulnerabilities and `git diff --check`.
+- Live browser verification passed for SYSTEM LIVE, WATCH (Risk 35 / Confidence 88), Critical
+  Risk 100 with dispatch, and inspection PWA widths 375, 390 and 412 px without overflow.
+- No browser console warnings or errors were observed in the verified desktop or phone paths.
+- The integrated API and dashboard were started locally on ports 8000 and 5173 for prototype use.
+- Next action: push `fullstack/integrated-prototype`, review its PR, then merge to `main` only
+  after explicit approval.
