@@ -30,6 +30,7 @@ static const uint8_t MPU6050_REG_ACCEL_XOUT_H = 0x3B;
 
 static uint32_t sequence = 0;
 static bool mpu6050Ok = false;
+static uint32_t lastHealthReportMs = 0;
 
 bool mpu6050Init() {
   Wire.beginTransmission(MPU6050_I2C_ADDR);
@@ -106,6 +107,26 @@ void setLeds(bool healthy, bool connected) {
   digitalWrite(PIN_LED_GREEN, healthy && connected ? HIGH : LOW);
   digitalWrite(PIN_LED_YELLOW, healthy && !connected ? HIGH : LOW);
   digitalWrite(PIN_LED_RED, !healthy ? HIGH : LOW);
+}
+
+// Device-health telemetry (Part A) -- kept entirely separate from the frozen
+// sensor packet above. temperatureRead() is the real Arduino-ESP32 core
+// function for the internal die-temperature sensor; chip_temp_warning is a
+// safety-margin flag against the sourced absolute-max rating, NOT a claim
+// about ambient temperature -- see the note in config.h.
+void reportDeviceHealth() {
+  float chipTempC = temperatureRead();
+  bool warning = chipTempC >= CHIP_TEMP_WARNING_THRESHOLD_C;
+
+  String payload = "{\"chip_temp_c\":" + String(chipTempC, 1) +
+                    ",\"chip_temp_warning\":" + String(warning ? "true" : "false") + "}";
+
+  HTTPClient http;
+  http.begin(String(API_BASE_URL) + "/api/v1/devices/" + NODE_ID + "/health");
+  http.addHeader("Content-Type", "application/json");
+  int status = http.POST(payload);
+  Serial.printf("POST /api/v1/devices/%s/health -> %d (chip_temp_c=%.1f)\n", NODE_ID, status, chipTempC);
+  http.end();
 }
 
 // Builds the frozen v1 packet as a JSON string by hand (no JSON library
@@ -190,6 +211,11 @@ void loop() {
     sequence++;
   } else {
     Serial.println("Skipped this cycle: no WiFi connection or clock not yet synced");
+  }
+
+  if (connOk && millis() - lastHealthReportMs >= DEVICE_HEALTH_REPORT_INTERVAL_MS) {
+    reportDeviceHealth();
+    lastHealthReportMs = millis();
   }
 
   delay(REPORT_INTERVAL_MS);

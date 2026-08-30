@@ -23,9 +23,11 @@ from apps.api.auth import login, logout, require_roles, require_session
 from apps.api.decision import configuration_snapshot, evaluate
 from apps.api.models import (
     AcknowledgeRequest,
+    DeviceHealthRequest,
     InspectionUpdateRequest,
     LoginRequest,
     ResolveRequest,
+    UnitProximityRequest,
 )
 from intelligence.features import InvalidPacketError, extract_features
 
@@ -33,7 +35,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1")
 SESSION_DEPENDENCY = Depends(require_session)
-NODE_POSITIONS = {"NODE_A": [22, 42], "NODE_B": [67, 62]}
+# [x, y, z] -- x/y are the existing local-panel coordinates (unchanged, used by
+# auto_assign()'s 2D dispatch distance math below, which only ever reads index
+# 0/1). z is a new DESIGN-ASSUMPTION depth/level index (Part C) -- no real depth
+# sensor exists; it is never presented as measured data, only as a plain number
+# for the dashboard's Position (X, Y, Z) readout.
+NODE_POSITIONS = {"NODE_A": [22, 42, -15], "NODE_B": [67, 62, -22]}
 SCENARIOS = {
     "normal": {"NODE_A": (0.4, 0.2, 0.06, 1.0), "NODE_B": (0.5, 0.3, 0.08, 1.2)},
     "watch": {"NODE_A": (1.3, 0.9, 0.16, 1.9), "NODE_B": (1.1, 0.8, 0.18, 2.2)},
@@ -49,6 +56,14 @@ def database(request: Request):
     return request.app.state.database
 
 
+def _require_gateway_key(x_device_key: str | None) -> None:
+    configured_key = os.getenv("SMART_MINE_GATEWAY_KEY")
+    if configured_key and (
+        x_device_key is None or not secrets.compare_digest(x_device_key, configured_key)
+    ):
+        raise HTTPException(status_code=401, detail="Invalid gateway credentials")
+
+
 @router.post("/readings", status_code=201)
 async def ingest_reading(
     packet: dict,
@@ -56,11 +71,7 @@ async def ingest_reading(
     x_device_id: str = Header(default="DIRECT_OR_SIMULATOR"),
     x_device_key: str | None = Header(default=None),
 ):
-    configured_key = os.getenv("SMART_MINE_GATEWAY_KEY")
-    if configured_key and (
-        x_device_key is None or not secrets.compare_digest(x_device_key, configured_key)
-    ):
-        raise HTTPException(status_code=401, detail="Invalid gateway credentials")
+    _require_gateway_key(x_device_key)
     try:
         extract_features(packet)
     except InvalidPacketError as error:
@@ -117,11 +128,7 @@ async def acknowledge_gateway_command(
     x_device_id: str = Header(default="ESP32-S3-GATEWAY"),
     x_device_key: str | None = Header(default=None),
 ):
-    configured_key = os.getenv("SMART_MINE_GATEWAY_KEY")
-    if configured_key and (
-        x_device_key is None or not secrets.compare_digest(x_device_key, configured_key)
-    ):
-        raise HTTPException(status_code=401, detail="Invalid gateway credentials")
+    _require_gateway_key(x_device_key)
     if not acknowledgement.get("command_id") or acknowledgement.get("status") not in {
         "APPLIED",
         "FAILED",
@@ -130,6 +137,23 @@ async def acknowledge_gateway_command(
     database(request).audit(x_device_id, "GATEWAY_COMMAND_ACK", None, acknowledgement)
     await request.app.state.event_hub.publish("GATEWAY_COMMAND_ACK", acknowledgement)
     return {"accepted": True, **acknowledgement}
+
+
+@router.post("/devices/{device_id}/health")
+def report_device_health(
+    device_id: str,
+    health: DeviceHealthRequest,
+    request: Request,
+    x_device_key: str | None = Header(default=None),
+):
+    _require_gateway_key(x_device_key)
+    database(request).record_device_health(device_id, health.chip_temp_c, health.chip_temp_warning)
+    return {"status": "recorded"}
+
+
+@router.get("/devices")
+def list_device_health(request: Request):
+    return database(request).device_health()
 
 
 @router.get("/readings")
@@ -242,6 +266,22 @@ def unit_assignment(unit_id: str, request: Request):
             "inspection_updates": store.inspection_updates(incident["id"]),
         },
     }
+
+
+@router.post("/units/{unit_id}/proximity")
+def report_proximity(
+    unit_id: str,
+    proximity: UnitProximityRequest,
+    request: Request,
+    session: dict = SESSION_DEPENDENCY,
+):
+    require_roles(session, "INSPECTION")
+    if unit_id != session.get("unit_id"):
+        raise HTTPException(status_code=403, detail="Unit may only report its own proximity")
+    if unit_id not in {"ALPHA", "BRAVO"}:
+        raise HTTPException(status_code=404, detail="Inspection unit not found")
+    database(request).record_proximity(unit_id, proximity.rssi)
+    return {"status": "recorded"}
 
 
 @router.post("/incidents/{incident_id}/inspection")

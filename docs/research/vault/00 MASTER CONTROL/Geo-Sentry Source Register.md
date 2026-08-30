@@ -36,6 +36,8 @@ tags:
 | SRC-0015 | Vishay, *General Information for Fixed Film Resistors* | manufacturer technical guide | https://www.vishay.com/docs/20103/geninfo.pdf | 2026-08-30 | General resistor behaviour | CLM-0012 |
 | SRC-0016 | Texas Instruments, matched thin-film resistors overview | manufacturer technical guidance | https://www.ti.com/product-category/passive-discrete/matched-thin-film-resistors/overview.html | 2026-08-30 | Supports matched-network principle | CLM-0012 |
 | SRC-0017 | Espressif, ESP32 Series Datasheet | manufacturer datasheet | https://documentation.espressif.com/esp32_datasheet_en.pdf | 2026-08-30 | Chip-specific; finished board/system limits may be narrower | CLM-0013 |
+| SRC-0018 | Espressif, ESP32-S3 Series Datasheet Version 2.2 | manufacturer datasheet | https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf | 2026-08-30 | Chip-specific (ESP32-S3, distinct from base ESP32/SRC-0017); recommended/absolute-max ratings vary by module variant (WROOM-1 vs H4/R8/R16V) | CLM-0014 |
+| SRC-0019 | Espressif, ESP-IDF Programming Guide, *Temperature Sensor — ESP32-S3* | official technical documentation | https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/temp_sensor.html | 2026-08-30 | Documents the internal die-temperature sensor's measurement range and accuracy; explicitly states it measures silicon temperature, not ambient, and cannot give a precise value | CLM-0015 |
 
 > [!warning] Source discipline
 > A registered source is not automatically applicable to every mine, sensor, threshold, or design. Check jurisdiction, mine type, geology, date, scope, methods, and limitations before linking it to a claim.

@@ -81,9 +81,16 @@ class Database:
                     incident_id INTEGER,
                     details TEXT NOT NULL DEFAULT '{}'
                 );
+                CREATE TABLE IF NOT EXISTS device_health (
+                    device_id TEXT PRIMARY KEY,
+                    chip_temp_c REAL NOT NULL,
+                    chip_temp_warning INTEGER NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
                 """
             )
             self._ensure_incident_columns(connection)
+            self._ensure_unit_columns(connection)
             now = self._now()
             connection.executemany(
                 "INSERT OR IGNORE INTO units(id, position_x, position_y, updated_at) "
@@ -109,6 +116,20 @@ class Database:
         for name, definition in additions.items():
             if name not in existing:
                 connection.execute(f"ALTER TABLE incidents ADD COLUMN {name} {definition}")
+
+    @staticmethod
+    def _ensure_unit_columns(connection: sqlite3.Connection) -> None:
+        # anchor_rssi/anchor_rssi_updated_at are BLE-anchor relative-proximity
+        # telemetry (Part B) -- deliberately separate from position_x/position_y,
+        # which stay local-XY and are used only by auto_assign()'s dispatch math.
+        existing = {row[1] for row in connection.execute("PRAGMA table_info(units)")}
+        additions = {
+            "anchor_rssi": "INTEGER",
+            "anchor_rssi_updated_at": "TEXT",
+        }
+        for name, definition in additions.items():
+            if name not in existing:
+                connection.execute(f"ALTER TABLE units ADD COLUMN {name} {definition}")
 
     def save(self, packet: dict, decision: dict) -> tuple[int, bool]:
         with self._connection() as connection:
@@ -234,7 +255,9 @@ class Database:
             ).fetchone()
         return dict(row) if row else None
 
-    def auto_assign(self, incident_id: int, target: tuple[float, float]) -> dict | None:
+    def auto_assign(self, incident_id: int, target: tuple[float, ...]) -> dict | None:
+        # Only target[0]/target[1] (x, y) are used -- callers may pass a 3-tuple
+        # that also carries a z/depth value (apps/api/routes.py's NODE_POSITIONS).
         units = [unit for unit in self.units() if unit["status"] == "AVAILABLE"]
         if not units:
             self.audit("SYSTEM", "DISPATCH_UNAVAILABLE", incident_id, {})
@@ -248,10 +271,39 @@ class Database:
         )
         return self.assign(incident_id, unit["id"])
 
+    #: How stale an anchor_rssi reading may be before it's excluded from the
+    #: closer-to-anchor comparison -- gives the 30s phone-reporting cadence
+    #: (Part B) headroom for one missed cycle without flapping.
+    PROXIMITY_FRESHNESS_SECONDS = 35
+
     def units(self) -> list[dict]:
         with self._connection() as connection:
             rows = connection.execute("SELECT * FROM units ORDER BY id").fetchall()
-        return [dict(row) for row in rows]
+        units = [dict(row) for row in rows]
+
+        fresh = {
+            unit["id"]: unit["anchor_rssi"]
+            for unit in units
+            if unit["anchor_rssi"] is not None
+            and self._seconds_since(unit["anchor_rssi_updated_at"])
+            <= self.PROXIMITY_FRESHNESS_SECONDS
+        }
+        if len(fresh) == 2:
+            closer_id = max(fresh, key=fresh.get)  # less-negative dBm = closer
+            for unit in units:
+                unit["closer_to_anchor"] = unit["id"] == closer_id
+        else:
+            for unit in units:
+                unit["closer_to_anchor"] = None
+        return units
+
+    def record_proximity(self, unit_id: str, rssi: int) -> None:
+        with self._connection() as connection:
+            connection.execute(
+                "UPDATE units SET anchor_rssi = ?, anchor_rssi_updated_at = ?, updated_at = ? "
+                "WHERE id = ?",
+                (rssi, self._now(), self._now(), unit_id),
+            )
 
     def unit_assignment(self, unit_id: str) -> dict | None:
         with self._connection() as connection:
@@ -428,6 +480,32 @@ class Database:
         from datetime import UTC, datetime
 
         return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+    @staticmethod
+    def _seconds_since(timestamp: str) -> float:
+        from datetime import UTC, datetime
+
+        then = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+        return (datetime.now(UTC) - then).total_seconds()
+
+    def record_device_health(
+        self, device_id: str, chip_temp_c: float, chip_temp_warning: bool
+    ) -> None:
+        with self._connection() as connection:
+            connection.execute(
+                "INSERT INTO device_health(device_id, chip_temp_c, chip_temp_warning, updated_at) "
+                "VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(device_id) DO UPDATE SET "
+                "chip_temp_c = excluded.chip_temp_c, "
+                "chip_temp_warning = excluded.chip_temp_warning, "
+                "updated_at = excluded.updated_at",
+                (device_id, chip_temp_c, int(chip_temp_warning), self._now()),
+            )
+
+    def device_health(self) -> list[dict]:
+        with self._connection() as connection:
+            rows = connection.execute("SELECT * FROM device_health ORDER BY device_id").fetchall()
+        return [{**dict(row), "chip_temp_warning": bool(row["chip_temp_warning"])} for row in rows]
 
     @staticmethod
     def _reading(row: sqlite3.Row) -> dict:

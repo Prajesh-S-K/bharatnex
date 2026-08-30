@@ -49,6 +49,7 @@ tags:
 | “Bad vibration for sand” | UNKNOWN | depends on density, confinement, saturation, waveform, duration and failure mode | site investigation and dynamic/field evidence |
 | Universal mine-slope vibration alarm | REJECTED AS UNIVERSAL | building-protection PPV limits do not establish slope instability | mine-specific study, deformation/pore-pressure correlation and qualified approval |
 | Geo-Sentry accelerometer alarm | UNKNOWN | raw acceleration is not automatically equivalent to PPV | calibration, waveform processing, frequency response and reference-instrument comparison |
+| ESP32-S3 die temperature as an ambient-limit proxy | REJECTED AS DIRECT PROXY | die temperature runs hotter than ambient from self-heating (VAL-MCU-006 vs VAL-MCU-004); no characterized offset exists to convert one to the other | on-device thermal characterization comparing die-sensor readings to a reference ambient probe under representative load |
 
 ## Threshold approval record
 
@@ -66,6 +67,11 @@ tags:
 | VAL-PV-001 | STC cell temperature | 25 | °C | cited MNRE procurement context | SRC-0011 | reference test condition, not field temperature |
 | VAL-PV-002 | maximum magnitude power temperature coefficient | 0.50 | %/°C | cited MNRE procurement requirement | SRC-0011 | select exact module using its certified data |
 | VAL-MCU-001 | recommended ESP32 supply | 3.3 nominal; exact min/max variant-dependent | V | exact ESP32 chip | SRC-0017 | board/system may be narrower |
+| VAL-MCU-002 | ESP32-S3 recommended operating voltage | 3.0 to 3.6 | V | ESP32-S3 (any variant) | SRC-0018 | manufacturer spec |
+| VAL-MCU-003 | ESP32-S3 absolute max supply voltage | −0.3 to 3.6 | V | ESP32-S3 (any variant) | SRC-0018 | manufacturer spec |
+| VAL-MCU-004 | ESP32-S3 recommended ambient temperature | −40 to 85 | °C | WROOM-1/standard variant (H4 variants: to 105; R8/R16V: to 65) | SRC-0018 | manufacturer spec; confirm exact module variant |
+| VAL-MCU-005 | ESP32-S3 absolute max storage temperature | −40 to 105 | °C | ESP32-S3 (any variant) | SRC-0018 | manufacturer spec |
+| VAL-MCU-006 | ESP32-S3 internal die-temperature sensor range | −40 to 125 | °C | ESP32-S3 (any variant), ±1–3 °C accuracy depending on sub-range | SRC-0019 | measures silicon temperature, not ambient -- see "not credibly available yet" below |
 
 ## Related
 

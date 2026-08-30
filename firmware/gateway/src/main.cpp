@@ -24,6 +24,29 @@
 
 WebServer server(80);
 uint32_t lastForwardSuccessMs = 0;
+uint32_t lastHealthReportMs = 0;
+
+// Device-health telemetry (Part A) -- see the identical note in
+// ../../sensor-node/src/main.cpp: temperatureRead() is the real internal
+// die-temperature sensor, chip_temp_warning is a safety margin against the
+// sourced absolute-max rating, NOT an ambient-temperature claim.
+void reportDeviceHealth() {
+  float chipTempC = temperatureRead();
+  bool warning = chipTempC >= CHIP_TEMP_WARNING_THRESHOLD_C;
+
+  String payload = "{\"chip_temp_c\":" + String(chipTempC, 1) +
+                    ",\"chip_temp_warning\":" + String(warning ? "true" : "false") + "}";
+
+  HTTPClient http;
+  http.begin(String(API_BASE_URL) + "/api/v1/devices/" + GATEWAY_DEVICE_ID + "/health");
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("X-Device-Id", GATEWAY_DEVICE_ID);
+  if (strlen(GATEWAY_DEVICE_KEY) > 0) http.addHeader("X-Device-Key", GATEWAY_DEVICE_KEY);
+  int status = http.POST(payload);
+  Serial.printf("POST /api/v1/devices/%s/health -> %d (chip_temp_c=%.1f)\n", GATEWAY_DEVICE_ID, status,
+                chipTempC);
+  http.end();
+}
 
 // Minimal, deliberately fragile extraction of two fields from the backend's
 // JSON response -- no JSON library dependency (see ../../sensor-node/README.md
@@ -127,4 +150,9 @@ void loop() {
 
   bool uplinkHealthy = (millis() - lastForwardSuccessMs) < UPLINK_STALE_MS || lastForwardSuccessMs == 0;
   digitalWrite(PIN_STATUS_LED, uplinkHealthy ? HIGH : LOW);
+
+  if (millis() - lastHealthReportMs >= DEVICE_HEALTH_REPORT_INTERVAL_MS) {
+    reportDeviceHealth();
+    lastHealthReportMs = millis();
+  }
 }

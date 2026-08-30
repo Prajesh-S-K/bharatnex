@@ -30,3 +30,16 @@
 // server's computed state, matching the "direct node-to-API mode" fallback
 // documented in docs/RECOVERY_BACKUP.md.
 #define REPORT_INTERVAL_MS 2000
+
+// Device-health warning margin. NOT an ambient-temperature limit -- the
+// internal die-temperature sensor (temperatureRead()) measures silicon
+// temperature, which runs hotter than ambient from self-heating with no
+// characterized offset (see docs/research/vault/00 MASTER CONTROL/Geo-Sentry
+// Sourced Parameter Register.md, VAL-MCU-004 vs VAL-MCU-006). This margin is
+// a safety ceiling below the sourced absolute-max storage rating of 105 C
+// (VAL-MCU-005), not a calibrated ambient reading.
+#define CHIP_TEMP_WARNING_THRESHOLD_C 90.0f
+
+// How often to report device health to the backend (separate from the
+// sensor-reading cadence above).
+#define DEVICE_HEALTH_REPORT_INTERVAL_MS 10000
