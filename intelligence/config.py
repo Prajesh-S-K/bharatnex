@@ -212,3 +212,26 @@ PROTOTYPE_PROFILE = IntelligenceProfile(
 #: The profile future Intelligence modules should read. Swapping to a calibrated or
 #: industrial profile later means changing this one line, not any consuming module.
 ACTIVE_PROFILE: IntelligenceProfile = PROTOTYPE_PROFILE
+
+
+# ---------------------------------------------------------------------------
+# Risk-score scale anchors (I-03).
+#
+# The 0-100 per-feature Risk scale is a transparent piecewise-linear mapping through
+# these five calibration points: physical zero -> 0, the profile's WATCH threshold ->
+# 25, WARNING -> 50, CRITICAL -> 80, and one more WATCH-WARNING-sized band above
+# CRITICAL -> 100 (capped beyond that). These are scale anchors, not sensor thresholds
+# -- they apply identically to every feature regardless of its physical units -- so
+# they live here once instead of being retyped as 25/50/80/100 in risk.py, trend.py
+# and any later module that needs to reason about the same 0-100 scale.
+# ---------------------------------------------------------------------------
+
+RISK_SCALE_ANCHORS: MappingProxyType[str, float] = MappingProxyType(
+    {
+        "physical_zero": 0.0,
+        "watch": 25.0,
+        "warning": 50.0,
+        "critical": 80.0,
+        "cap": 100.0,
+    }
+)
