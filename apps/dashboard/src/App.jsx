@@ -485,6 +485,7 @@ function App() {
 
           {[
             "normal",
+            "watch",
             "warning",
             "critical",
             "sensor_failure",

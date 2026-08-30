@@ -33,6 +33,7 @@ SESSION_DEPENDENCY = Depends(require_session)
 NODE_POSITIONS = {"NODE_A": [22, 42], "NODE_B": [67, 62]}
 SCENARIOS = {
     "normal": {"NODE_A": (0.4, 0.2, 0.06, 1.0), "NODE_B": (0.5, 0.3, 0.08, 1.2)},
+    "watch": {"NODE_A": (1.3, 0.9, 0.16, 1.9), "NODE_B": (1.1, 0.8, 0.14, 1.7)},
     "warning": {"NODE_A": (2.3, 1.7, 0.30, 3.2), "NODE_B": (2.1, 1.5, 0.27, 2.8)},
     "critical": {"NODE_A": (5.8, 3.7, 0.75, 7.4), "NODE_B": (4.9, 3.1, 0.62, 6.8)},
     "sensor_failure": {"NODE_A": (1.2, 0.8, 0.1, 1.8), "NODE_B": (1.1, 0.7, 0.12, 1.7)},
