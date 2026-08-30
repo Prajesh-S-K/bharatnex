@@ -2,6 +2,7 @@
 
 import csv
 import io
+import logging
 import os
 import secrets
 from datetime import UTC, datetime
@@ -18,8 +19,8 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, StreamingResponse
 
-from apps.api.auth import login, require_roles, require_session
-from apps.api.decision import evaluate
+from apps.api.auth import login, logout, require_roles, require_session
+from apps.api.decision import configuration_snapshot, evaluate
 from apps.api.models import (
     AcknowledgeRequest,
     InspectionUpdateRequest,
@@ -27,6 +28,8 @@ from apps.api.models import (
     ResolveRequest,
 )
 from intelligence.features import InvalidPacketError, extract_features
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1")
 SESSION_DEPENDENCY = Depends(require_session)
@@ -62,6 +65,8 @@ async def ingest_reading(
         extract_features(packet)
     except InvalidPacketError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    if not request.app.state.readings_rate_limiter.allow(packet["node_id"]):
+        raise HTTPException(status_code=429, detail="Too many readings for this node")
     store = database(request)
     history = store.latest(packet["node_id"])
     latest = store.latest_by_node()
@@ -73,6 +78,12 @@ async def ingest_reading(
             status_code=409,
             detail="Sequence is not newer than the latest stored reading for this node",
         )
+    logger.info(
+        "reading ingested node_id=%s sequence=%s state=%s",
+        packet["node_id"],
+        packet["sequence"],
+        decision["state"],
+    )
     incident_id = store.open_incident(decision)
     if incident_id and "DISPATCH_INSPECTION" in decision["actions"]:
         store.auto_assign(incident_id, tuple(NODE_POSITIONS[packet["node_id"]]))
@@ -147,7 +158,7 @@ def overview(request: Request):
         "nodes": nodes,
         "incidents": store.incidents(),
         "units": store.units(),
-        "intelligence_engine": "FALLBACK",
+        **configuration_snapshot(),
     }
 
 
@@ -194,6 +205,7 @@ async def dispatch(incident_id: int, request: Request, unit: str = "ALPHA"):
     incident = database(request).assign(incident_id, unit)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
+    logger.info("incident dispatched id=%s unit=%s", incident_id, unit)
     await request.app.state.event_hub.publish("INCIDENT_UPDATED", incident)
     return incident
 
@@ -201,6 +213,11 @@ async def dispatch(incident_id: int, request: Request, unit: str = "ALPHA"):
 @router.post("/auth/login")
 def create_session(credentials: LoginRequest, request: Request):
     return login(request, credentials)
+
+
+@router.post("/auth/logout")
+def end_session(request: Request, authorization: str | None = Header(default=None)):
+    return logout(request, authorization)
 
 
 @router.get("/units")
@@ -252,6 +269,7 @@ async def acknowledge_incident(
     result = database(request).acknowledge(incident_id, acknowledgement.actor)
     if not result:
         raise HTTPException(status_code=404, detail="Incident not found")
+    logger.info("incident acknowledged id=%s actor=%s", incident_id, acknowledgement.actor)
     await request.app.state.event_hub.publish("INCIDENT_UPDATED", result)
     return result
 
@@ -267,6 +285,7 @@ async def resolve_incident(
     result = database(request).resolve(incident_id, session["role"], resolution.notes)
     if not result:
         raise HTTPException(status_code=404, detail="Incident not found")
+    logger.info("incident resolved id=%s role=%s", incident_id, session["role"])
     await request.app.state.event_hub.publish("INCIDENT_UPDATED", result)
     return result
 
@@ -286,12 +305,13 @@ def incident_detail(incident_id: int, request: Request):
 
 @router.get("/configuration")
 def prototype_configuration():
+    snapshot = configuration_snapshot()
     return {
-        "profile": "PROTOTYPE / SYNTHETIC / TEST-ONLY",
+        "profile": snapshot["intelligence_profile_status"],
         "active_panel": "PANEL-01",
         "reporting_intervals_ms": REPORTING_INTERVALS_MS,
         "offline_after_missed_intervals": 3,
-        "intelligence_engine": "FALLBACK",
+        **snapshot,
         "target_devices": [
             {"unit": "ALPHA", "model": "OnePlus Nord CE5", "platform": "Android 16"},
             {
@@ -403,6 +423,7 @@ async def reset_demo(
 ):
     require_roles(session, "OPERATOR", "ADMIN")
     database(request).reset_demo()
+    logger.info("demo reset role=%s", session["role"])
     await request.app.state.event_hub.publish("DEMO_RESET", {})
     return {"status": "reset"}
 

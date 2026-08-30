@@ -95,3 +95,21 @@ def evaluate(packet: dict, history: list | None = None, neighbour: dict | None =
         anomaly_evidence=anomaly_evidence,
     )
     return result["decision"]
+
+
+def configuration_snapshot() -> dict:
+    """Non-frozen traceability info for GET /api/v1/configuration and /overview.
+
+    Never touches the frozen decision.schema.json shape -- this is a separate,
+    additive endpoint payload. Reads the `_anomaly_bundle` module global directly
+    rather than calling `_get_anomaly_bundle()`, which would force lazy training
+    just to answer a status check.
+    """
+    from intelligence import config as intelligence_config
+
+    return {
+        "intelligence_profile": intelligence_config.ACTIVE_PROFILE.name,
+        "intelligence_profile_status": intelligence_config.ACTIVE_PROFILE.status,
+        "decision_schema_version": intelligence_config.DECISION_SCHEMA_VERSION,
+        "anomaly_model_trained": _anomaly_bundle is not None,
+    }
