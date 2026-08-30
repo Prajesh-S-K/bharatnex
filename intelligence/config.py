@@ -351,3 +351,58 @@ class PrototypeStateTuning(NamedTuple):
 #: min_trustworthy_confidence (reused, not redeclared) -- an untrustworthy "calm"
 #: reading must not count toward recovery.
 PROTOTYPE_STATE_TUNING = PrototypeStateTuning(deescalation_streak=3)
+
+
+# ---------------------------------------------------------------------------
+# Isolation Forest tuning (I-09).
+#
+# Supplementary anomaly evidence only -- see intelligence/anomaly.py module docstring
+# for the hard boundary: it can only ever ADD the SENSOR_ANOMALY reason code; it never
+# computes Risk, Confidence, state, or an action on its own.
+# ---------------------------------------------------------------------------
+
+
+class PrototypeAnomalyTuning(NamedTuple):
+    """Tuning for the Isolation Forest anomaly-evidence model.
+
+    NOT a validated calibration -- see `status`.
+    """
+
+    n_estimators: int
+    contamination: float
+    random_state: int
+    calibration_holdout_fraction: float
+    min_calibration_rows: int
+    min_baseline_rows: int
+    calib_high_percentile: float
+    calib_low_percentile: float
+    calib_low_margin_stds: float
+    anomalous_threshold: float
+    status: str = PROTOTYPE_STATUS
+
+
+#: contamination=0.01 (not "auto"): the baseline is pure normal data by construction,
+#: so contamination should reflect "how many baseline points are borderline", not an
+#: assumed outlier rate -- "auto" would push ~10% of the baseline itself negative.
+#: calibration_holdout_fraction=0.3 / min_calibration_rows=5: the 0-1 rescaling range
+#: is calibrated on a held-out slice of the baseline the model was NOT fit on, because
+#: a model scores its own training points more favourably than fresh normal data
+#: (isolation trees partition tightly around exactly what they saw).
+#: calib_high_percentile=40 / calib_low_percentile=5 / calib_low_margin_stds=1.5:
+#: "high" anchors what typical unseen-but-normal data looks like; "low" extends a
+#: margin below the held-out low tail so genuinely novel readings can reach ~1.0.
+#: anomalous_threshold=0.5: the midpoint of the calibrated 0-1 scale -- the simplest
+#: defensible cut point until real calibration data exists.
+#: min_baseline_rows=10: the least data train() will fit a model on at all.
+PROTOTYPE_ANOMALY_TUNING = PrototypeAnomalyTuning(
+    n_estimators=100,
+    contamination=0.01,
+    random_state=42,
+    calibration_holdout_fraction=0.3,
+    min_calibration_rows=5,
+    min_baseline_rows=10,
+    calib_high_percentile=40.0,
+    calib_low_percentile=5.0,
+    calib_low_margin_stds=1.5,
+    anomalous_threshold=0.5,
+)
