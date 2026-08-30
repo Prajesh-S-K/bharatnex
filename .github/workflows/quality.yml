@@ -44,7 +44,13 @@ jobs:
       - name: Scan tracked files for common credential assignments
         shell: bash
         run: |
-          if git grep -nEi '(password|api[_-]?key|secret|token|ssid)[[:space:]]*=[[:space:]]*[^$<{[:space:]]' -- ':!*.example' ':!.github/workflows/*'; then
+          matches="$(git grep -nEi '(password|api[_-]?key|secret|token|ssid)[[:space:]]*=[[:space:]]*[^$<{[:space:]]' -- ':!*.example' ':!.github/workflows/*' || true)"
+          # Exclude assignments that are clearly dynamic, cryptographically-secure
+          # generation calls (not a literal/hardcoded value), e.g. Python's `secrets`
+          # module, os.urandom, openssl rand or uuid4.
+          suspicious="$(printf '%s\n' "$matches" | grep -viE 'secrets\.(token_urlsafe|token_hex|token_bytes)\(|os\.urandom\(|openssl rand|uuid\.uuid4\(\)' || true)"
+          if [[ -n "$suspicious" ]]; then
+            echo "$suspicious"
             echo "Potential credential-like assignment found in tracked files."
             exit 1
           fi
