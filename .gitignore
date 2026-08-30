@@ -34,6 +34,7 @@ logs/
 automation/.env
 automation/*.log
 automation/*.pid
+.automation-worktrees/
 
 # Embedded builds
 .pio/

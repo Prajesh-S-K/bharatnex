@@ -1,0 +1,88 @@
+{
+  "id": "SMIdeaCheckpoint",
+  "name": "SMART-MINE Idea to Checkpoint",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "SMART-MINE Local Coding Agent",
+        "formDescription": "Describe one bounded task. The local agent works in an isolated Git worktree, runs checks, creates a checkpoint commit only when checks pass, and always stops before push or merge.",
+        "authentication": "n8nUserAuth",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Idea or task",
+              "fieldName": "idea",
+              "fieldType": "textarea",
+              "placeholder": "Example: Add a focused API test for invalid inspection unit IDs.",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Workstream",
+              "fieldName": "workstream",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {"option": "fullstack"},
+                  {"option": "intelligence"},
+                  {"option": "hardware"},
+                  {"option": "simulator"},
+                  {"option": "documentation"}
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "buttonLabel": "Build isolated checkpoint",
+          "path": "smart-mine-idea",
+          "appendAttribution": false,
+          "ignoreBots": true,
+          "includeUserInOutput": false
+        }
+      },
+      "id": "idea-form",
+      "name": "Submit SMART-MINE Idea",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [0, 0],
+      "webhookId": "smart-mine-idea"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8010/v1/idea-to-checkpoint",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ idea: $json.idea, workstream: $json.workstream, max_repairs: 2 }) }}",
+        "options": {"timeout": 900000}
+      },
+      "id": "local-coding-agent",
+      "name": "Run Local Coding Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bharatnex-runner-auth",
+          "name": "SMART-MINE Runner Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Submit SMART-MINE Idea": {
+      "main": [[{"node": "Run Local Coding Agent", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata"
+  },
+  "active": false,
+  "versionId": "a1d92eb4-a538-4c86-ab26-14274b03c2fe"
+}

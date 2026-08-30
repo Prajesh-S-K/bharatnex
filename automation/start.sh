@@ -26,7 +26,7 @@ if ! ollama list | awk 'NR > 1 {print $1}' | grep -Fxq "$OLLAMA_MODEL"; then
 fi
 
 if ! curl -fsS http://127.0.0.1:8010/health >/dev/null; then
-  nohup "$ROOT_DIR/.venv/bin/python" "$AUTOMATION_DIR/runner.py" \
+  nohup "$ROOT_DIR/.venv/bin/python" -m automation.runner \
     >"$AUTOMATION_DIR/runner.log" 2>&1 &
   echo $! >"$AUTOMATION_DIR/runner.pid"
 fi

@@ -13,6 +13,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from automation.coding_agent import AgentError, AgentTask, idea_to_checkpoint
+
 ROOT = Path(__file__).resolve().parents[1]
 HOST = "127.0.0.1"
 PORT = 8010
@@ -82,6 +84,24 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/v1/quality-gate":
             self._json(200, run_quality_gate())
+            return
+        if self.path == "/v1/idea-to-checkpoint":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if length <= 0 or length > 10_000:
+                    raise AgentError("Request body must contain at most 10 KB")
+                payload = json.loads(self.rfile.read(length))
+                task = AgentTask(
+                    idea=str(payload.get("idea", "")),
+                    workstream=str(payload.get("workstream", "")),
+                    base_ref=str(payload.get("base_ref", "HEAD")),
+                    max_repairs=int(payload.get("max_repairs", 2)),
+                )
+                self._json(200, idea_to_checkpoint(task))
+            except (AgentError, json.JSONDecodeError, TypeError, ValueError) as error:
+                self._json(422, {"status": "REJECTED", "detail": str(error)})
+            except Exception as error:  # noqa: BLE001
+                self._json(500, {"status": "FAILED", "detail": type(error).__name__})
             return
         self._json(404, {"detail": "Operation not allowlisted"})
 

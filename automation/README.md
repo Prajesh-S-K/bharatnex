@@ -33,6 +33,10 @@ The runner is available only on `127.0.0.1:8010`. n8n reaches it through
   compact pass/fail report.
 - **SMART-MINE Local Handoff Summary:** uses Ollama to summarize an already-produced quality
   report. It does not modify the repository.
+- **SMART-MINE Idea to Checkpoint:** accepts one bounded idea, selects context with local
+  Ollama, works in an isolated Git worktree, runs at most two repair attempts, commits only
+  after all checks pass, and stops before push or merge.
 
-Do not activate autonomous code-writing workflows until a dedicated worktree, task scope,
-and stop-before-merge gate have been reviewed.
+The coding workflow enforces one active task, workstream-specific path allowlists, protected
+contracts/automation/CI paths, bounded model context and a mandatory stop before push or merge.
+Treat its result as a draft checkpoint requiring human review—not as error-free production code.

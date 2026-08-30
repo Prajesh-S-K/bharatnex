@@ -534,11 +534,31 @@ Checkpoint status:
 - Verified n8n → runner end to end: 13 Python tests, Ruff lint/format, contract validation,
   whitespace, frontend lint/build and Git diff all passed.
 - Verified n8n → Ollama end to end using the local handoff-summary workflow.
-- n8n remains limited to reporting and summarization. Autonomous writes, commits, pushes,
-  merges, contract changes and safety decisions are disabled.
-- One-time local n8n owner onboarding remains a user-controlled UI step. Three earlier imported
-  draft workflows are still visible alongside the corrected copies and should be removed after
-  login; no project source or n8n credential is affected.
+- At this checkpoint n8n was limited to reporting and summarization; the later constrained coding
+  checkpoint below supersedes that boundary for isolated worktrees only.
+- Owner onboarding and obsolete-draft cleanup were pending here and completed in the following
+  checkpoint.
+
+### 2026-08-30 — Local idea-to-checkpoint pipeline
+
+- Completed n8n owner onboarding and archived the three obsolete workflow drafts; four current
+  workflows remain visible.
+- Added a protected, published form at `http://127.0.0.1:5678/form/smart-mine-idea` using n8n
+  user authentication.
+- Added an Ollama coding runner that creates one isolated Git worktree per task, limits model
+  context and writes to the selected workstream only.
+- Contracts, automation code, GitHub configuration, secrets and cross-workstream paths are
+  structurally blocked.
+- The runner attempts at most two repairs, commits only after tests/lint/build pass, and never
+  pushes or merges.
+- Added 13 automation guardrail tests; the full repository now has 26 passing Python tests.
+- A documentation-only end-to-end proof created branch
+  `automation/20260830-033046-create-docs-automation-proof-md-with`, checkpoint `cfe493b`, and
+  stopped locally before push or merge.
+- The proof exposed final-newline churn from full-file local-model output; the writer now
+  normalizes text files to a final newline and a regression test covers it.
+- Local automation reduces hosted-token consumption for repetitive implementation, but local
+  model output is not guaranteed error-free and still requires checkpoint review.
 - Operator/demo/integration checkpoint implemented and browser-verified.
 - The active branch remains `fullstack/prototype-command-center`.
 - The branch is currently two committed checkpoints ahead of its remote before the final

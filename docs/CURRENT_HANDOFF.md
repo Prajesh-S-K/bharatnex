@@ -11,9 +11,15 @@ For complete recovery, read [RECOVERY_BACKUP.md](RECOVERY_BACKUP.md).
 - Ollama is running locally with `qwen2.5-coder:7b`.
 - The allowlisted runner is local-only at `127.0.0.1:8010`.
 - n8n successfully executed the Repository Quality Gate and Local Handoff Summary workflows.
+- The published Idea-to-Checkpoint form is available at
+  `http://127.0.0.1:5678/form/smart-mine-idea` for signed-in n8n users.
+- Its first documentation-only proof created isolated branch
+  `automation/20260830-033046-create-docs-automation-proof-md-with` at commit `cfe493b` and
+  stopped without push or merge.
 - The quality gate passed: 13 Python tests, Ruff lint/format, contracts, whitespace,
   frontend lint/build and Git diff.
-- Autonomous code mutation, Git commits, pushes and merges remain disabled.
+- Constrained code mutation and checkpoint commits are enabled only inside isolated worktrees.
+  Push and merge remain disabled.
 
 ## Automation files
 
@@ -21,6 +27,7 @@ For complete recovery, read [RECOVERY_BACKUP.md](RECOVERY_BACKUP.md).
 - `automation/runner.py`: fixed-operation runner; no arbitrary shell interface.
 - `automation/start.sh`: local startup helper.
 - `automation/n8n/workflows/`: health, quality-gate and local-summary workflows.
+- `automation/coding_agent.py`: bounded Ollama planner/implementer and repair loop.
 - `automation/.env.example`: non-secret configuration template.
 - `automation/.env`: ignored local secret/configuration file.
 
@@ -35,9 +42,6 @@ For complete recovery, read [RECOVERY_BACKUP.md](RECOVERY_BACKUP.md).
 
 ## Next action
 
-1. Open `http://127.0.0.1:5678` and complete the one-time local owner setup.
-2. Keep the three corrected workflow files as the source of truth; remove the three earlier
-   duplicate drafts from the n8n editor after login.
-3. Run the quality workflow once from the editor.
-4. Add an isolated worktree coding workflow later, with an explicit task scope and mandatory
-   stop-before-merge gate.
+1. Use the protected task form for one bounded task at a time.
+2. Review the returned worktree diff and tests before any push.
+3. Keep contracts, safety logic and cross-workstream changes under explicit human review.
